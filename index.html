@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>我的行事曆</title>
+<title>飲料日記</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧋</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧋</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -19,128 +19,136 @@
   --tx:#111111;--tx2:#666666;--acc:#444444;--grn:#3A9436;--red:#B03A34;--amb:#8A7020;--blue:#2A6A98;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Geist',sans-serif;background:var(--bg);color:var(--tx);height:100vh;overflow:hidden;letter-spacing:-0.01em;}
+body{font-family:'Geist',sans-serif;background:var(--bg);color:var(--tx);height:100vh;overflow:hidden;letter-spacing:-0.01em;font-size:16px;}
 
 /* ── Lock Screen ── */
 .lock-screen{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;}
-.lock-title{font-size:22px;font-weight:600;color:var(--tx);}
-.lock-sub{font-size:13px;color:var(--tx2);}
-.lock-input{width:100%;max-width:280px;padding:12px 16px;font-size:16px;background:var(--surf);border:1px solid var(--bd);border-radius:10px;color:var(--tx);font-family:'Geist',sans-serif;text-align:center;letter-spacing:4px;outline:none;}
+.lock-title{font-size:24px;font-weight:600;color:var(--tx);}
+.lock-sub{font-size:15px;color:var(--tx2);}
+.lock-input{width:100%;max-width:280px;padding:14px 16px;font-size:18px;background:var(--surf);border:1px solid var(--bd);border-radius:10px;color:var(--tx);font-family:'Geist',sans-serif;text-align:center;letter-spacing:4px;outline:none;}
 .lock-input:focus{border-color:var(--acc);}
-.lock-btn{width:100%;max-width:280px;padding:12px;background:var(--acc);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;font-family:'Geist',sans-serif;cursor:pointer;}
+.lock-btn{width:100%;max-width:280px;padding:14px;background:var(--acc);color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:600;font-family:'Geist',sans-serif;cursor:pointer;}
 .lock-btn:hover{opacity:.85;}
-.lock-err{font-size:12px;color:var(--red);min-height:18px;}
+.lock-err{font-size:13px;color:var(--red);min-height:18px;}
 
 /* ── App Shell ── */
 .app{display:none;flex-direction:column;height:100vh;}
 .app.visible{display:flex;}
-header{padding:10px 16px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;background:var(--surf);flex-shrink:0;}
-.h-title{font-size:14px;font-weight:600;}
+header{padding:12px 16px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;background:var(--surf);flex-shrink:0;}
+.h-title{font-size:16px;font-weight:600;}
 .h-actions{display:flex;gap:8px;align-items:center;}
-.h-btn{background:transparent;border:1px solid var(--bd);color:var(--tx2);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:'Geist',sans-serif;}
+.h-btn{background:transparent;border:1px solid var(--bd);color:var(--tx2);border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer;font-family:'Geist',sans-serif;}
 .h-btn:hover{background:var(--surf2);color:var(--tx);}
-#sync-indicator{font-size:12px;min-width:16px;text-align:center;}
+#sync-indicator{font-size:13px;min-width:16px;text-align:center;}
 .content{flex:1;overflow-y:auto;padding:14px;padding-bottom:80px;}
 
 /* ── Calendar ── */
 .cal-header{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
-.cal-nav{background:transparent;border:1px solid var(--bd);color:var(--tx);border-radius:6px;padding:4px 12px;cursor:pointer;font-family:'Geist',sans-serif;font-size:13px;}
+.cal-nav{background:transparent;border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:7px 16px;cursor:pointer;font-family:'Geist',sans-serif;font-size:15px;}
 .cal-nav:hover{background:var(--surf2);}
-.cal-month-title{font-size:15px;font-weight:600;flex:1;}
+.cal-month-title{font-size:18px;font-weight:600;flex:1;}
 .cal-view-toggle{display:flex;gap:4px;}
-.cal-view-btn{padding:4px 12px;border-radius:6px;border:1px solid var(--bd);background:transparent;color:var(--tx2);font-size:12px;cursor:pointer;font-family:'Geist',sans-serif;}
+.cal-view-btn{padding:7px 16px;border-radius:8px;border:1px solid var(--bd);background:transparent;color:var(--tx2);font-size:14px;cursor:pointer;font-family:'Geist',sans-serif;}
 .cal-view-btn.active{background:var(--acc);color:#fff;border-color:var(--acc);}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--bd);border:1px solid var(--bd);border-radius:10px;overflow:hidden;margin-bottom:14px;}
-.cal-dow{background:var(--surf2);padding:5px 4px;font-size:10px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.04em;text-align:center;}
-.cal-cell{background:var(--surf);padding:6px 5px;min-height:64px;cursor:pointer;transition:.1s;position:relative;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--bd);border:1px solid var(--bd);border-radius:12px;overflow:hidden;margin-bottom:14px;}
+.cal-dow{background:var(--surf2);padding:7px 4px;font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.04em;text-align:center;}
+.cal-cell{background:var(--surf);padding:7px 5px;min-height:72px;cursor:pointer;transition:.1s;position:relative;}
 .cal-cell:hover{background:var(--surf2);}
 .cal-cell.other-month{opacity:.3;}
 .cal-cell.today{background:var(--surf2);box-shadow:inset 2px 0 0 var(--acc);}
 .cal-cell.selected{background:var(--surf2);box-shadow:inset 2px 0 0 var(--blue);}
-.cal-date{font-size:12px;font-weight:500;color:var(--tx2);margin-bottom:3px;}
+/* Holiday cell */
+.cal-cell.holiday{background:rgba(192,90,82,.06);}
+.cal-cell.holiday .cal-date{color:var(--red);}
+[data-theme="light"] .cal-cell.holiday{background:rgba(192,90,82,.06);}
+.cal-date{font-size:14px;font-weight:500;color:var(--tx2);margin-bottom:3px;}
 .cal-cell.today .cal-date{color:var(--tx);font-weight:700;}
-.cal-dots{display:flex;gap:2px;flex-wrap:wrap;margin-top:3px;}
+/* Note indicator — small dot/line below date */
+.cal-note-dot{width:18px;height:3px;border-radius:2px;background:var(--acc);margin:2px 0;opacity:.7;}
+.cal-dots{display:flex;gap:2px;flex-wrap:wrap;margin-top:2px;}
 .cal-dot{width:6px;height:6px;border-radius:50%;background:var(--bd);}
 .cal-dot.done{background:var(--grn);}
-.cal-drink-chip{font-size:9px;color:var(--amb);margin-top:2px;}
+.cal-drink-chip{font-size:10px;color:var(--amb);margin-top:2px;line-height:1.3;}
 
 /* ── Day Panel ── */
-.panel-wrap{background:var(--surf);border:1px solid var(--bd);border-radius:12px;padding:0;margin-bottom:14px;overflow:hidden;}
-.panel-header{padding:12px 14px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;}
-.panel-date{font-size:14px;font-weight:600;}
-.panel-close{background:none;border:none;color:var(--tx2);font-size:18px;cursor:pointer;padding:0 4px;}
-.panel-body{padding:14px;}
-.panel-label{font-size:10px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em;margin:12px 0 7px;}
+.panel-wrap{background:var(--surf);border:1px solid var(--bd);border-radius:14px;padding:0;margin-bottom:14px;overflow:hidden;}
+.panel-header{padding:14px 16px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;}
+.panel-date{font-size:16px;font-weight:600;}
+.panel-close{background:none;border:none;color:var(--tx2);font-size:22px;cursor:pointer;padding:0 4px;line-height:1;}
+.panel-body{padding:16px;}
+.panel-label{font-size:12px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px;}
 .panel-label:first-child{margin-top:0;}
 
 /* Note */
-.day-note{width:100%;background:var(--surf2);border:1px solid var(--bd);border-radius:8px;color:var(--tx);padding:10px;font-size:13px;font-family:'Geist',sans-serif;resize:none;outline:none;height:80px;line-height:1.5;}
+.day-note{width:100%;background:var(--surf2);border:1px solid var(--bd);border-radius:10px;color:var(--tx);padding:12px;font-size:15px;font-family:'Geist',sans-serif;resize:none;outline:none;height:88px;line-height:1.6;}
 .day-note:focus{border-color:var(--acc);}
 
 /* Checklist */
-.checklist-item{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
-.cl-check{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--bd);cursor:pointer;flex-shrink:0;transition:.15s;}
+.checklist-item{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.cl-check{width:20px;height:20px;border-radius:5px;border:1.5px solid var(--bd);cursor:pointer;flex-shrink:0;transition:.15s;}
 .cl-check:hover{border-color:var(--acc);}
 .cl-check.checked{background:var(--grn);border-color:var(--grn);background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 12 12' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 6l3 3 5-5' stroke='white' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-size:cover;}
-.cl-text{flex:1;background:transparent;border:none;color:var(--tx);font-size:13px;font-family:'Geist',sans-serif;outline:none;padding:1px 0;}
+.cl-text{flex:1;background:transparent;border:none;color:var(--tx);font-size:15px;font-family:'Geist',sans-serif;outline:none;padding:2px 0;}
 .cl-text.done-text{text-decoration:line-through;color:var(--tx2);}
-.cl-del{background:none;border:none;color:var(--tx2);cursor:pointer;font-size:14px;padding:0 2px;opacity:0;}
+.cl-del{background:none;border:none;color:var(--tx2);cursor:pointer;font-size:16px;padding:0 4px;opacity:0;}
 .checklist-item:hover .cl-del{opacity:1;}
-.cr-tag{font-size:9px;color:var(--amb);white-space:nowrap;flex-shrink:0;}
-.add-cl-btn{background:transparent;border:1px dashed var(--bd);color:var(--tx2);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:'Geist',sans-serif;width:100%;margin-top:4px;}
+.cr-tag{font-size:11px;color:var(--amb);white-space:nowrap;flex-shrink:0;}
+.add-cl-btn{background:transparent;border:1px dashed var(--bd);color:var(--tx2);border-radius:8px;padding:10px 12px;font-size:14px;cursor:pointer;font-family:'Geist',sans-serif;width:100%;margin-top:6px;}
 .add-cl-btn:hover{border-color:var(--acc);color:var(--acc);}
-.rule-toggle{font-size:11px;color:var(--tx2);cursor:pointer;display:flex;align-items:center;gap:4px;margin-top:10px;margin-bottom:6px;user-select:none;}
+.rule-toggle{font-size:13px;color:var(--tx2);cursor:pointer;display:flex;align-items:center;gap:6px;margin-top:12px;margin-bottom:8px;user-select:none;}
 .rule-toggle:hover{color:var(--tx);}
 
 /* Drink tracker */
-.drink-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--bd);position:relative;}
+.drink-header-row{display:grid;grid-template-columns:22px 1fr 1fr 64px 22px;gap:0 8px;padding:0 0 6px;border-bottom:1px solid var(--bd);margin-bottom:4px;}
+.drink-header-row span{font-size:12px;color:var(--tx2);}
+.drink-row{display:grid;grid-template-columns:22px 1fr 1fr 64px 22px;gap:0 8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--bd);position:relative;}
 .drink-row:last-child{border:none;}
-.drink-name{flex:1.5;min-width:0;position:relative;}
-.drink-shop{flex:1.2;min-width:0;position:relative;}
-.drink-price{width:60px;flex-shrink:0;}
-.drink-input{background:transparent;border:none;color:var(--tx);font-size:12px;font-family:'Geist',sans-serif;width:100%;outline:none;padding:2px 0;}
-.drink-input::placeholder{color:var(--tx2);opacity:.7;}
+.drink-name{min-width:0;position:relative;}
+.drink-shop{min-width:0;position:relative;}
+.drink-price{position:relative;}
+.drink-input{background:transparent;border:none;color:var(--tx);font-size:14px;font-family:'Geist',sans-serif;width:100%;outline:none;padding:2px 0;}
+.drink-input::placeholder{color:var(--tx2);opacity:.6;}
 .drink-input:focus{border-bottom:1px solid var(--acc);}
-.drink-del{background:none;border:none;color:var(--tx2);cursor:pointer;font-size:13px;padding:0 2px;opacity:0;flex-shrink:0;}
+.drink-del{background:none;border:none;color:var(--tx2);cursor:pointer;font-size:16px;padding:0;opacity:0;width:22px;text-align:center;}
 .drink-row:hover .drink-del{opacity:1;}
-.drink-total{font-size:11px;color:var(--tx2);margin-top:6px;text-align:right;}
+.drink-total{font-size:13px;color:var(--tx2);margin-top:8px;text-align:right;}
 .drink-total span{color:var(--amb);font-weight:600;}
-.drink-ac-drop{position:absolute;top:calc(100% + 2px);left:0;right:0;background:var(--surf);border:1px solid var(--bd);border-radius:8px;z-index:300;box-shadow:0 6px 20px rgba(0,0,0,.35);max-height:160px;overflow-y:auto;}
-.drink-ac-item{padding:7px 12px;font-size:12px;cursor:pointer;display:flex;flex-direction:column;gap:2px;}
+.drink-ac-drop{position:absolute;top:calc(100% + 2px);left:0;right:0;background:var(--surf);border:1px solid var(--bd);border-radius:10px;z-index:300;box-shadow:0 8px 24px rgba(0,0,0,.4);max-height:180px;overflow-y:auto;}
+.drink-ac-item{padding:10px 14px;font-size:14px;cursor:pointer;display:flex;flex-direction:column;gap:2px;}
 .drink-ac-item:hover{background:var(--surf2);}
 .drink-ac-name{color:var(--tx);font-weight:500;}
-.drink-ac-sub{font-size:10px;color:var(--tx2);}
+.drink-ac-sub{font-size:12px;color:var(--tx2);}
 
 /* Recurring manager */
-.cr-manager-item{background:var(--surf2);border:1px solid var(--bd);border-radius:8px;padding:10px;margin-bottom:8px;}
-.cr-period-label{font-size:10px;color:var(--amb);background:rgba(184,154,66,.15);padding:2px 7px;border-radius:4px;}
+.cr-manager-item{background:var(--surf2);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:10px;}
+.cr-period-label{font-size:11px;color:var(--amb);background:rgba(184,154,66,.15);padding:3px 8px;border-radius:4px;}
 
 /* Week view */
 .week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:14px;}
-.week-cell{background:var(--surf);border:1px solid var(--bd);border-radius:8px;padding:10px 8px;cursor:pointer;min-height:80px;}
+.week-cell{background:var(--surf);border:1px solid var(--bd);border-radius:10px;padding:12px 8px;cursor:pointer;min-height:88px;}
 .week-cell:hover{border-color:var(--acc);}
 .week-cell.today{border-color:var(--acc);}
 .week-cell.selected{border-color:var(--blue);}
-.week-dow{font-size:10px;color:var(--tx2);font-weight:600;text-transform:uppercase;}
-.week-date{font-size:16px;font-weight:600;margin:2px 0 6px;}
-.week-note{font-size:10px;color:var(--tx2);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.week-cell.holiday .week-dow,.week-cell.holiday .week-date{color:var(--red);}
+.week-dow{font-size:11px;color:var(--tx2);font-weight:600;text-transform:uppercase;}
+.week-date{font-size:18px;font-weight:600;margin:3px 0 6px;}
+.week-note{font-size:12px;color:var(--tx2);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
 
 /* Weekend tint */
 .weekend-bg{background:#141414;}
 [data-theme="light"] .weekend-bg{background:#F0F0F0;}
 
 /* Bottom tab bar */
-.tabbar{display:flex;position:fixed;bottom:0;left:0;right:0;height:56px;background:var(--surf);border-top:1px solid var(--bd);z-index:100;padding:0 4px;padding-bottom:env(safe-area-inset-bottom);transition:transform .25s ease;}
+.tabbar{display:flex;position:fixed;bottom:0;left:0;right:0;height:60px;background:var(--surf);border-top:1px solid var(--bd);z-index:100;padding:0 4px;padding-bottom:env(safe-area-inset-bottom);transition:transform .25s ease;}
 .tabbar.hidden{transform:translateY(100%);}
-.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;border:none;background:transparent;color:var(--tx2);font-family:'Geist',sans-serif;font-size:9px;padding:6px 2px;border-radius:8px;margin:4px 2px;}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;border:none;background:transparent;color:var(--tx2);font-family:'Geist',sans-serif;font-size:11px;padding:6px 2px;border-radius:10px;margin:4px 2px;}
 .tab.active{color:var(--tx);background:var(--surf2);}
-.tab-icon{font-size:18px;line-height:1;}
+.tab-icon{font-size:22px;line-height:1;}
 
 /* Mobile tweaks */
 @media(max-width:768px){
-  .cal-cell{min-height:52px;padding:4px 3px;}
+  .cal-cell{min-height:60px;padding:5px 4px;}
   .week-grid{grid-template-columns:1fr;}
-  .drink-row{flex-wrap:wrap;}
 }
 </style>
 </head>
@@ -149,7 +157,7 @@ header{padding:10px 16px;border-bottom:1px solid var(--bd);display:flex;justify-
 <!-- Lock Screen -->
 <div class="lock-screen" id="lock-screen">
   <div style="font-size:32px">🔒</div>
-  <div class="lock-title">我的行事曆</div>
+  <div class="lock-title">🧋 飲料日記</div>
   <div class="lock-sub">請輸入密碼</div>
   <input class="lock-input" id="lock-input" type="password" placeholder="••••••"
     onkeydown="if(event.key==='Enter')tryUnlock()">
@@ -272,13 +280,40 @@ function getDay(key){
   if(!state.calendar[key].drinks)state.calendar[key].drinks=[];
   return state.calendar[key];
 }
-function toggleTheme(){state.theme=state.theme==='dark'?'light':'dark';save();document.body.setAttribute('data-theme',state.theme);}
+function toggleTheme(){
+  state.theme=state.theme==='dark'?'light':'dark';
+  document.body.setAttribute('data-theme',state.theme);
+  save();
+}
 function setView(v){
   currentView=v;
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('tab-'+v)?.classList.add('active');
   renderView();
 }
+
+/* ── Taiwan Public Holiday API ── */
+let _holidays={}; // {'YYYY-MM-DD': '假日名稱'}
+let _holidayYearsLoaded=new Set();
+
+async function loadHolidays(year){
+  if(_holidayYearsLoaded.has(year))return;
+  try{
+    const res=await fetch(`https://cdn.jsdelivr.net/gh/ruyut/TaiwanCalendar/data/${year}.json`);
+    if(!res.ok)return;
+    const data=await res.json();
+    data.forEach(d=>{
+      if(d.isHoliday){
+        const key=`${d.date.slice(0,4)}-${d.date.slice(4,6)}-${d.date.slice(6,8)}`;
+        _holidays[key]=d.description||'假日';
+      }
+    });
+    _holidayYearsLoaded.add(year);
+    renderView();
+  }catch(e){}
+}
+function isHoliday(key){return!!_holidays[key];}
+function holidayName(key){return _holidays[key]||'';}
 
 /* ── Startup checks ── */
 function runStartupChecks(){
@@ -326,6 +361,8 @@ function buildMonthGrid(){
   let cells='';
   const totalCells=Math.ceil((startDow+daysInMonth)/7)*7;
   cells+=DOW.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  // load holidays for this month's year
+  loadHolidays(y);
   for(let i=0;i<totalCells;i++){
     const offset=i-startDow;
     const d=new Date(y,m,1+offset);
@@ -335,9 +372,18 @@ function buildMonthGrid(){
     const checks=day.items||[];
     const drinks=day.drinks||[];
     const drinkTotal=drinks.reduce((s,d)=>s+(parseFloat(d.price)||0),0);
-    const cls=['cal-cell',!isThisMonth?'other-month':'',key===today?'today':'',key===calSelected?'selected':''].filter(Boolean).join(' ');
-    cells+=`<div class="${cls}" onclick="selectDay('${key}')">
+    const hasNote=!!(day.note&&day.note.trim());
+    const isHol=isHoliday(key);
+    const holName=holidayName(key);
+    const cls=['cal-cell',
+      !isThisMonth?'other-month':'',
+      key===today?'today':'',
+      key===calSelected?'selected':'',
+      isHol?'holiday':''
+    ].filter(Boolean).join(' ');
+    cells+=`<div class="${cls}" onclick="selectDay('${key}')" title="${holName}">
       <div class="cal-date">${d.getDate()}</div>
+      ${hasNote?`<div class="cal-note-dot"></div>`:''}
       ${drinks.length?`<div class="cal-drink-chip">🧋${drinks.length>1?' ×'+drinks.length:''} ${drinkTotal?'$'+drinkTotal:''}</div>`:''}
       ${checks.length?`<div class="cal-dots">${checks.map(x=>`<div class="cal-dot${x.done?' done':''}"></div>`).join('')}</div>`:''}
     </div>`;
@@ -350,16 +396,18 @@ function buildWeekGrid(){
   d.setDate(d.getDate()-d.getDay());
   const today=todayKey();
   let cells='';
+  loadHolidays(d.getFullYear());
   for(let i=0;i<7;i++){
     const key=dateKey(d);
     const day=getDay(key);
-    const isWknd=[0,6].includes(d.getDay());
-    const cls=['week-cell',isWknd?'weekend-bg':'',key===today?'today':'',key===calSelected?'selected':''].filter(Boolean).join(' ');
-    cells+=`<div class="${cls}" onclick="selectDay('${key}')">
-      <div class="week-dow">${DOW[d.getDay()]}</div>
+    const isHol=isHoliday(key);
+    const holName=holidayName(key);
+    const cls=['week-cell',isHol?'holiday':'',key===today?'today':'',key===calSelected?'selected':''].filter(Boolean).join(' ');
+    cells+=`<div class="${cls}" onclick="selectDay('${key}')" title="${holName}">
+      <div class="week-dow">${DOW[d.getDay()]}${isHol?` · ${holName}`:''}</div>
       <div class="week-date">${d.getDate()}</div>
       ${day.note?`<div class="week-note">${esc(day.note.slice(0,60))}</div>`:''}
-      ${day.drinks?.length?`<div style="font-size:10px;color:var(--amb);margin-top:4px">🧋 $${day.drinks.reduce((s,d)=>s+(parseFloat(d.price)||0),0)}</div>`:''}
+      ${day.drinks?.length?`<div style="font-size:12px;color:var(--amb);margin-top:4px">🧋 $${day.drinks.reduce((s,d)=>s+(parseFloat(d.price)||0),0)}</div>`:''}
     </div>`;
     d.setDate(d.getDate()+1);
   }
@@ -412,12 +460,12 @@ function buildDayPanel(){
       </div>
 
       <div class="panel-label" style="margin-top:14px">🧋 今日飲料</div>
-      <div style="font-size:10px;color:var(--tx2);display:grid;grid-template-columns:1fr 1fr 60px 18px;gap:0 6px;padding:0 0 4px;border-bottom:1px solid var(--bd);margin-bottom:2px">
-        <span>飲料</span><span>店家</span><span style="text-align:right">金額</span><span></span>
+      <div class="drink-header-row">
+        <span></span><span>飲料名稱</span><span>店家</span><span style="text-align:right">金額</span><span></span>
       </div>
       <div id="drink-list-${calSelected}"></div>
       <div id="drink-total-${calSelected}" class="drink-total"></div>
-      <button class="add-cl-btn" style="margin-top:6px" onclick="addDrink('${calSelected}')">+ 新增飲料</button>
+      <button class="add-cl-btn" style="margin-top:8px" onclick="addDrink('${calSelected}')">+ 新增飲料</button>
     </div>
   </div>`;
 }
@@ -550,7 +598,7 @@ function renderDrinkList(key){
   list.innerHTML=drinks.map((d,i)=>{
     const nd=`dnd-${key}-${i}`,sd=`dsd-${key}-${i}`;
     return`<div class="drink-row">
-      <span style="font-size:14px;flex-shrink:0">🧋</span>
+      <span style="font-size:16px;text-align:center">🧋</span>
       <div class="drink-name">
         <input class="drink-input" value="${esc(d.name)}" placeholder="飲料名稱" autocomplete="off"
           oninput="updateDrink('${key}',${i},'name',this.value);drinkNameAc('${key}',${i},this.value,'${nd}')"
@@ -726,6 +774,9 @@ async function boot(){
   setTimeout(()=>setSyncStatus('idle'),2500);
   runStartupChecks();
   document.body.setAttribute('data-theme',state.theme||'dark');
+  // load holidays for current and next year
+  const y=new Date().getFullYear();
+  loadHolidays(y);loadHolidays(y+1);
   renderView();
 }
 
