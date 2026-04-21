@@ -2,6 +2,9 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Listing Pro v14</title>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -88,23 +91,73 @@ header{padding:12px 22px;border-bottom:1px solid var(--bd);display:flex;justify-
 /* Weekend calendar tint */
 .cal-weekend-bg{background:#141414;}
 [data-theme="light"] .cal-weekend-bg{background:#F0F0F0;}
-/* Mobile responsive */
+/* Mobile responsive — bottom tab bar layout */
 @media(max-width:768px){
-  body{flex-direction:column;height:auto;overflow:auto;}
-  .sidebar{width:100%;min-width:0;flex-direction:row;flex-wrap:wrap;padding:10px;height:auto;border-right:none;border-bottom:1px solid var(--bd);}
-  .sidebar-logo{padding:0 8px 0;font-size:13px;}
-  .sidebar-footer{margin-top:0;padding-top:0;border-top:none;flex-direction:row;}
-  .nav-section{margin-bottom:0;}
-  .main{height:auto;overflow:visible;}
-  .content{overflow:visible;padding:12px;}
+  body{flex-direction:column;height:100vh;overflow:hidden;}
+  /* Hide sidebar entirely on mobile */
+  .sidebar{display:none;}
+  /* Main takes full height minus bottom tab bar */
+  .main{height:100vh;overflow:hidden;}
+  .content{overflow-y:auto;padding:12px;padding-bottom:72px;/* space for tab bar */}
+  header{padding:10px 14px;}
+  /* Kanban stacks vertically */
   .kanban{grid-template-columns:1fr !important;}
   .kanban-3{grid-template-columns:1fr !important;}
   .week-grid{grid-template-columns:1fr !important;}
-  .cal-grid{font-size:10px;}
-  .cal-cell{min-height:52px;padding:4px;}
-  header{padding:10px 14px;}
-  .cal-wrap{flex-direction:column;}
-  .cal-panel{width:100%;min-width:0;border-left:none;border-top:1px solid var(--bd);}
+  /* Calendar */
+  .cal-wrap{flex-direction:column;height:auto;}
+  .cal-main{overflow-y:visible;padding:0 !important;}
+  .cal-grid{font-size:11px;}
+  .cal-cell{min-height:58px;padding:5px 4px;}
+  .cal-note-preview{display:none;}
+  /* Day panel as bottom sheet */
+  .cal-panel{
+    position:fixed;bottom:64px;left:0;right:0;
+    width:100% !important;min-width:0 !important;
+    max-height:72vh;overflow-y:auto;
+    border-left:none !important;border-top:2px solid var(--bd) !important;
+    border-radius:16px 16px 0 0;
+    z-index:50;
+    box-shadow:0 -8px 30px rgba(0,0,0,.4);
+  }
+  .cal-panel::before{
+    content:'';display:block;width:36px;height:4px;
+    background:var(--bd);border-radius:2px;margin:10px auto 4px;
+  }
+  .panel-body{padding:10px 14px 24px;}
+  /* Stats bar wraps tighter */
+  .stats-bar{gap:6px;}
+  .stat-chip{min-width:70px;padding:8px 10px;}
+  .stat-chip .s-val{font-size:17px;}
+  /* Drink row wraps */
+  .drink-row{flex-wrap:wrap;}
+  .drink-shop{min-width:80px;}
+  .drink-price{width:50px;}
+  /* Morning brief */
+  .brief-wrap{grid-template-columns:1fr 1fr;}
+  /* Bottom tab bar */
+  .mobile-tabbar{
+    display:flex;
+    position:fixed;bottom:0;left:0;right:0;
+    height:56px;
+    background:var(--surf);
+    border-top:1px solid var(--bd);
+    z-index:100;
+    padding:0 4px;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .mobile-tab{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:2px;cursor:pointer;border:none;background:transparent;
+    color:var(--tx2);font-family:'Geist',sans-serif;font-size:9px;
+    padding:6px 2px;transition:.15s;border-radius:8px;margin:4px 2px;
+  }
+  .mobile-tab.active{color:var(--tx);background:var(--surf2);}
+  .mobile-tab .tab-icon{font-size:18px;line-height:1;}
+}
+/* Hide tab bar on desktop */
+@media(min-width:769px){
+  .mobile-tabbar{display:none;}
 }
 .task-desc{font-size:13px;font-weight:500;line-height:1.4;color:var(--tx);margin-bottom:7px;word-break:break-word;}
 .task-fields{display:grid;grid-template-columns:1fr 1fr;gap:3px 8px;margin-bottom:7px;}
@@ -3126,6 +3179,7 @@ function render(){
   });
 
   if(currentWsId) setTimeout(()=>wireFormAC(), 10);
+  updateMobileTabs();
 }
 
 // Helpers for missing CSS classes referenced in mapping view
@@ -3135,6 +3189,21 @@ document.head.appendChild(style);
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeEditModal();closeMapModal();closeSlistModal();closeVrModal();closeVrPreview();closeSchModal();}});
 function handleTitleClick(){if(!['dashboard','vendor','mapping','calendar','noconvert','teams','weekly'].includes(state.view))renameWorkspace(state.view);}
+
+function toggleMobileMore(){
+  const m=document.getElementById('mobile-more-menu');
+  if(m)m.style.display=m.style.display==='none'?'block':'none';
+}
+
+function updateMobileTabs(){
+  const tabMap={dashboard:'mtab-dashboard',calendar:'mtab-calendar',teams:'mtab-teams',vendor:'mtab-vendor'};
+  document.querySelectorAll('.mobile-tab').forEach(t=>t.classList.remove('active'));
+  const activeTabId=tabMap[state.view];
+  if(activeTabId)document.getElementById(activeTabId)?.classList.add('active');
+  // close more menu on any navigation
+  const m=document.getElementById('mobile-more-menu');
+  if(m)m.style.display='none';
+}
 window._inlineItems=[];
 
 // Boot: pull from Supabase, fallback to localStorage
@@ -3151,5 +3220,42 @@ window._inlineItems=[];
 window.addEventListener('online', ()=>{setSyncStatus('idle');schedulePush();});
 window.addEventListener('offline',()=>setSyncStatus('offline'));
 </script>
+<!-- Mobile bottom tab bar -->
+<div class="mobile-tabbar" id="mobile-tabbar">
+  <button class="mobile-tab" id="mtab-dashboard" onclick="switchView('dashboard')">
+    <span class="tab-icon">🏠</span><span>主頁</span>
+  </button>
+  <button class="mobile-tab" id="mtab-calendar" onclick="switchView('calendar')">
+    <span class="tab-icon">📅</span><span>行事曆</span>
+  </button>
+  <button class="mobile-tab" id="mtab-teams" onclick="switchView('teams')">
+    <span class="tab-icon">💬</span><span>Teams</span>
+  </button>
+  <button class="mobile-tab" id="mtab-vendor" onclick="switchView('vendor')">
+    <span class="tab-icon">🏢</span><span>Vendor</span>
+  </button>
+  <button class="mobile-tab" id="mtab-more" onclick="toggleMobileMore()">
+    <span class="tab-icon">⋯</span><span>更多</span>
+  </button>
+</div>
+
+<!-- Mobile "more" menu -->
+<div id="mobile-more-menu" style="display:none;position:fixed;bottom:56px;left:0;right:0;background:var(--surf);border-top:1px solid var(--bd);z-index:99;padding:8px;">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+    <button class="mobile-tab" style="flex:none;background:var(--surf2);border-radius:10px;padding:12px 6px;" onclick="switchView('weekly');toggleMobileMore()">
+      <span class="tab-icon">📊</span><span>週報</span>
+    </button>
+    <button class="mobile-tab" style="flex:none;background:var(--surf2);border-radius:10px;padding:12px 6px;" onclick="switchView('noconvert');toggleMobileMore()">
+      <span class="tab-icon">🚫</span><span>No-Convert</span>
+    </button>
+    <button class="mobile-tab" style="flex:none;background:var(--surf2);border-radius:10px;padding:12px 6px;" onclick="switchView('mapping');toggleMobileMore()">
+      <span class="tab-icon">👥</span><span>BM Map</span>
+    </button>
+    <button class="mobile-tab" style="flex:none;background:var(--surf2);border-radius:10px;padding:12px 6px;" onclick="toggleTheme();toggleMobileMore()">
+      <span class="tab-icon">🌓</span><span>主題</span>
+    </button>
+  </div>
+</div>
+
 </body>
 </html>
