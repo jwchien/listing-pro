@@ -190,7 +190,7 @@ const SB_HEADERS={'Content-Type':'application/json','apikey':SB_KEY,'Authorizati
 const STORAGE_KEY='cal_v1';
 const SUPABASE_ROW='cal_singleton'; // separate from main app's 'singleton'
 // ⚠️ 改成你自己想要的密碼
-const PASSWORD='199711';
+const PASSWORD='1234';
 
 /* ── Lock ── */
 function tryUnlock(){
@@ -259,7 +259,12 @@ function saveAndRender(){save();renderView();}
 
 /* ── Helpers ── */
 function esc(v){return String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
-function dateKey(d){return d.toISOString().slice(0,10);}
+function dateKey(d){
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  return`${y}-${m}-${day}`;
+}
 function todayKey(){return dateKey(new Date());}
 function getDay(key){
   if(!state.calendar)state.calendar={};
