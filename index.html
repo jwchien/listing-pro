@@ -94,25 +94,20 @@ header{padding:12px 22px;border-bottom:1px solid var(--bd);display:flex;justify-
 /* Mobile responsive — bottom tab bar layout */
 @media(max-width:768px){
   body{flex-direction:column;height:100vh;overflow:hidden;}
-  /* Hide sidebar entirely on mobile */
   .sidebar{display:none;}
-  /* Main takes full height minus bottom tab bar */
   .main{height:100vh;overflow:hidden;}
-  .content{overflow-y:auto;padding:12px;padding-bottom:72px;/* space for tab bar */}
+  .content{overflow-y:auto;padding:12px;padding-bottom:80px;}
   header{padding:10px 14px;}
-  /* Kanban stacks vertically */
   .kanban{grid-template-columns:1fr !important;}
   .kanban-3{grid-template-columns:1fr !important;}
   .week-grid{grid-template-columns:1fr !important;}
-  /* Calendar */
   .cal-wrap{flex-direction:column;height:auto;}
   .cal-main{overflow-y:visible;padding:0 !important;}
   .cal-grid{font-size:11px;}
   .cal-cell{min-height:58px;padding:5px 4px;}
   .cal-note-preview{display:none;}
-  /* Day panel as bottom sheet */
   .cal-panel{
-    position:fixed;bottom:64px;left:0;right:0;
+    position:fixed;bottom:0;left:0;right:0;
     width:100% !important;min-width:0 !important;
     max-height:72vh;overflow-y:auto;
     border-left:none !important;border-top:2px solid var(--bd) !important;
@@ -125,17 +120,20 @@ header{padding:12px 22px;border-bottom:1px solid var(--bd);display:flex;justify-
     background:var(--bd);border-radius:2px;margin:10px auto 4px;
   }
   .panel-body{padding:10px 14px 24px;}
-  /* Stats bar wraps tighter */
-  .stats-bar{gap:6px;}
-  .stat-chip{min-width:70px;padding:8px 10px;}
+  /* Stats: single scrollable row */
+  .stats-bar{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:8px;padding-bottom:4px;}
+  .stats-bar::-webkit-scrollbar{display:none;}
+  .stat-chip{min-width:76px;flex-shrink:0;padding:8px 10px;}
   .stat-chip .s-val{font-size:17px;}
-  /* Drink row wraps */
+  /* Brief grid 2 cols */
+  .brief-wrap{grid-template-columns:1fr 1fr;}
+  /* Drink row */
   .drink-row{flex-wrap:wrap;}
   .drink-shop{min-width:80px;}
   .drink-price{width:50px;}
-  /* Morning brief */
-  .brief-wrap{grid-template-columns:1fr 1fr;}
-  /* Bottom tab bar */
+  /* Vendor/table text align fix */
+  .vr-tbl td,.vr-tbl th,.nc-table td,.nc-table th{text-align:left;}
+  /* Tab bar — auto-hide, show on scroll up */
   .mobile-tabbar{
     display:flex;
     position:fixed;bottom:0;left:0;right:0;
@@ -145,7 +143,9 @@ header{padding:12px 22px;border-bottom:1px solid var(--bd);display:flex;justify-
     z-index:100;
     padding:0 4px;
     padding-bottom:env(safe-area-inset-bottom);
+    transition:transform .25s ease;
   }
+  .mobile-tabbar.hidden{transform:translateY(100%);}
   .mobile-tab{
     flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
     gap:2px;cursor:pointer;border:none;background:transparent;
@@ -155,7 +155,6 @@ header{padding:12px 22px;border-bottom:1px solid var(--bd);display:flex;justify-
   .mobile-tab.active{color:var(--tx);background:var(--surf2);}
   .mobile-tab .tab-icon{font-size:18px;line-height:1;}
 }
-/* Hide tab bar on desktop */
 @media(min-width:769px){
   .mobile-tabbar{display:none;}
 }
@@ -3149,7 +3148,6 @@ function render(){
       <div class="stat-chip s-wip"><div class="s-val">${counts.wip}</div><div class="s-lbl">進行中</div></div>
       <div class="stat-chip s-done"><div class="s-val">${counts.done}</div><div class="s-lbl">Done</div></div>
       ${overdueCount?`<div class="stat-chip" style="border-color:rgba(192,90,82,.35)"><div class="s-val" style="color:var(--red)">${overdueCount}</div><div class="s-lbl">🔄 未完成</div></div>`:''}
-      <div class="stat-chip s-rec"><div class="s-val">${state.recurring.filter(r=>r.active).length}</div><div class="s-lbl">週期(舊)</div></div>
     </div>
     ${state.recurring.length?`<div class="section-label">🔄 週期任務</div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">${state.recurring.map(buildRecCardHtml).join('')}</div>`:''}
     ${pinnedCount?`<div class="section-label">⭐ 優先處理</div><div class="kanban kanban-3" style="margin-bottom:16px" id="pinned-zone"></div>`:''}
@@ -3200,10 +3198,35 @@ function updateMobileTabs(){
   document.querySelectorAll('.mobile-tab').forEach(t=>t.classList.remove('active'));
   const activeTabId=tabMap[state.view];
   if(activeTabId)document.getElementById(activeTabId)?.classList.add('active');
-  // close more menu on any navigation
   const m=document.getElementById('mobile-more-menu');
   if(m)m.style.display='none';
 }
+
+// Tab bar auto-hide on scroll down, show on scroll up
+(function(){
+  let lastY=0;
+  document.addEventListener('scroll',()=>{
+    const tb=document.getElementById('mobile-tabbar');
+    if(!tb)return;
+    const y=window.scrollY||document.documentElement.scrollTop;
+    if(y>lastY&&y>60)tb.classList.add('hidden');
+    else tb.classList.remove('hidden');
+    lastY=y;
+  },{passive:true});
+  // also wire to content-area scroll
+  setTimeout(()=>{
+    const ca=document.getElementById('content-area');
+    if(!ca)return;
+    ca.addEventListener('scroll',()=>{
+      const tb=document.getElementById('mobile-tabbar');
+      if(!tb)return;
+      const y=ca.scrollTop;
+      if(y>lastY&&y>60)tb.classList.add('hidden');
+      else tb.classList.remove('hidden');
+      lastY=y;
+    },{passive:true});
+  },500);
+})();
 window._inlineItems=[];
 
 // Boot: pull from Supabase, fallback to localStorage
