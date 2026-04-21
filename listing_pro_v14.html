@@ -1,0 +1,3155 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Listing Pro v14</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#0D0D0D;--surf:#171717;--surf2:#202020;--bd:#2E2E2E;
+  --tx:#E8E8E8;--tx2:#737373;--acc:#A0A0A0;--grn:#6DB86A;--red:#C05A52;--amb:#B89A42;--pin:#B06880;--blue:#5A8FB8;
+}
+[data-theme="light"]{
+  --bg:#F5F5F5;--surf:#FFFFFF;--surf2:#EBEBEB;--bd:#D0D0D0;
+  --tx:#111111;--tx2:#666666;--acc:#444444;--grn:#3A9436;--red:#B03A34;--amb:#8A7020;--pin:#904860;--blue:#2A6A98;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Geist',sans-serif;background:var(--bg);color:var(--tx);display:flex;height:100vh;overflow:hidden;letter-spacing:-0.01em;}
+
+/* Sidebar */
+.sidebar{width:240px;min-width:240px;background:var(--surf);border-right:1px solid var(--bd);display:flex;flex-direction:column;padding:18px 10px;overflow-y:auto;}
+.sidebar-logo{font-size:14px;font-weight:600;padding:0 8px 18px;color:var(--tx);}
+.nav-section{margin-bottom:14px;}
+.folder-header{font-size:10px;font-weight:600;color:var(--tx2);padding:5px 8px;cursor:pointer;border-radius:6px;text-transform:uppercase;letter-spacing:.06em;transition:.15s;}
+.folder-header:hover{background:var(--surf2);color:var(--tx);}
+.nav-item{padding:6px 10px;border-radius:6px;cursor:pointer;font-size:13px;margin-bottom:2px;display:flex;align-items:center;gap:6px;transition:.15s;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.nav-item:hover{background:var(--surf2);color:var(--tx);}
+.nav-item.active{background:var(--acc);color:#FFFFFF;font-weight:500;}
+.ws-item{margin-left:10px;font-size:12px;}
+.dashboard-link{color:var(--tx);font-weight:500;}
+.sidebar-footer{margin-top:auto;padding-top:14px;border-top:1px solid var(--bd);display:flex;flex-direction:column;gap:5px;}
+.sidebar-btn{padding:7px 10px;border-radius:6px;border:1px solid var(--bd);background:transparent;color:var(--tx2);font-size:12px;cursor:pointer;text-align:left;font-family:'Geist',sans-serif;transition:.15s;}
+.sidebar-btn:hover{background:var(--surf2);color:var(--tx);}
+.sidebar-actions{display:flex;gap:5px;margin-top:2px;}
+.hidden-input{display:none;}
+
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+header{padding:12px 22px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;background:var(--surf);gap:12px;flex-wrap:wrap;}
+.view-title{font-size:15px;font-weight:600;cursor:pointer;color:var(--tx);flex-shrink:0;}
+.view-title:hover{color:var(--acc);}
+.header-search{margin:0;width:180px;}
+.content{flex:1;overflow-y:auto;padding:18px 22px;}
+
+/* Stats */
+.stats-bar{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+.stat-chip{background:var(--surf);border:1px solid var(--bd);border-radius:8px;padding:10px 16px;display:flex;flex-direction:column;gap:2px;min-width:88px;}
+.stat-chip .s-val{font-size:20px;font-weight:600;color:var(--tx);line-height:1;}
+.stat-chip .s-lbl{font-size:10px;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;}
+.s-wip .s-val{color:var(--blue);}
+.s-pin .s-val{color:var(--pin);}
+.s-todo .s-val{color:var(--acc);}
+.s-done .s-val{color:var(--grn);}
+.s-rec .s-val{color:var(--amb);}
+
+/* Section label */
+.section-label{font-size:10px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.07em;margin:0 0 10px;display:flex;align-items:center;gap:6px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--bd);}
+
+/* Kanban — 4 cols */
+.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:start;}
+.kanban-3{grid-template-columns:repeat(3,1fr);}
+.column{background:var(--surf2);border-radius:10px;padding:12px;border:1px solid var(--bd);}
+.col-header{font-weight:600;font-size:10px;color:var(--tx2);text-transform:uppercase;margin-bottom:12px;letter-spacing:.07em;display:flex;justify-content:space-between;align-items:center;}
+.col-count{background:var(--bd);border-radius:10px;padding:1px 7px;font-size:10px;}
+.col-wip .col-header{color:var(--blue);}
+.col-done .col-header{color:var(--grn);}
+
+/* Task Card */
+.task-card{background:var(--surf);border:1px solid var(--bd);border-radius:8px;padding:11px;margin-bottom:9px;transition:border-color .15s,box-shadow .15s;overflow:hidden;}
+.task-card:hover{border-color:var(--acc);}
+.task-card.pinned{border-left:3px solid var(--pin);}
+.task-card.is-wip{border-left:3px solid #555;border-color:#555;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04),0 0 0 1px rgba(255,255,255,.03);}
+[data-theme="light"] .task-card.is-wip{border-color:#999;box-shadow:inset 0 1px 3px rgba(0,0,0,.07);}
+.task-card.recurring-card{border-left:3px solid var(--amb);}
+.task-card.has-period{border-left:3px solid var(--bd);}
+.task-card.period-overdue{border-left:3px solid rgba(192,90,82,.5);}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:7px;}
+.card-badges{display:flex;gap:4px;flex-wrap:wrap;flex:1;min-width:0;}
+.badge{font-size:10px;padding:2px 6px;border-radius:4px;white-space:nowrap;}
+.b-cat{background:rgba(196,132,74,.15);color:var(--acc);}
+.b-pin{background:rgba(196,122,138,.15);color:var(--pin);}
+.b-wip{background:rgba(106,158,196,.15);color:var(--blue);}
+.b-rec{background:rgba(201,168,76,.15);color:var(--amb);}
+.b-ws{color:var(--tx2);background:var(--surf2);border:1px solid var(--bd);border-radius:4px;}
+/* Period alert */
+.period-alert{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:rgba(192,90,82,.25);color:var(--red);font-size:9px;font-weight:700;flex-shrink:0;margin-left:2px;}
+/* Weekend calendar tint */
+.cal-weekend-bg{background:#141414;}
+[data-theme="light"] .cal-weekend-bg{background:#F0F0F0;}
+/* Mobile responsive */
+@media(max-width:768px){
+  body{flex-direction:column;height:auto;overflow:auto;}
+  .sidebar{width:100%;min-width:0;flex-direction:row;flex-wrap:wrap;padding:10px;height:auto;border-right:none;border-bottom:1px solid var(--bd);}
+  .sidebar-logo{padding:0 8px 0;font-size:13px;}
+  .sidebar-footer{margin-top:0;padding-top:0;border-top:none;flex-direction:row;}
+  .nav-section{margin-bottom:0;}
+  .main{height:auto;overflow:visible;}
+  .content{overflow:visible;padding:12px;}
+  .kanban{grid-template-columns:1fr !important;}
+  .kanban-3{grid-template-columns:1fr !important;}
+  .week-grid{grid-template-columns:1fr !important;}
+  .cal-grid{font-size:10px;}
+  .cal-cell{min-height:52px;padding:4px;}
+  header{padding:10px 14px;}
+  .cal-wrap{flex-direction:column;}
+  .cal-panel{width:100%;min-width:0;border-left:none;border-top:1px solid var(--bd);}
+}
+.task-desc{font-size:13px;font-weight:500;line-height:1.4;color:var(--tx);margin-bottom:7px;word-break:break-word;}
+.task-fields{display:grid;grid-template-columns:1fr 1fr;gap:3px 8px;margin-bottom:7px;}
+.task-field{font-size:11px;color:var(--tx2);overflow:hidden;}
+.task-field span{font-weight:500;color:var(--tx);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.task-link{color:var(--acc);font-size:11px;text-decoration:none;display:inline-flex;align-items:center;gap:3px;overflow:hidden;max-width:100%;}
+.task-link-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.task-actions{display:flex;justify-content:flex-end;gap:5px;margin-top:8px;padding-top:7px;border-top:1px solid var(--bd);flex-wrap:wrap;}
+.card-btn{padding:3px 9px;border-radius:5px;border:1px solid var(--bd);background:transparent;font-size:11px;font-weight:500;cursor:pointer;font-family:'Geist',sans-serif;transition:.15s;color:var(--tx2);}
+.card-btn:hover{background:var(--surf2);color:var(--tx);}
+.card-btn.grn{color:var(--grn);border-color:rgba(125,184,122,.3);}
+.card-btn.grn:hover{background:rgba(125,184,122,.1);}
+.card-btn.red{color:var(--red);border-color:rgba(196,99,90,.3);}
+.card-btn.red:hover{background:rgba(196,99,90,.1);}
+.card-btn.amb{color:var(--amb);border-color:rgba(201,168,76,.3);}
+.card-btn.amb:hover{background:rgba(201,168,76,.1);}
+.card-btn.pin{color:var(--pin);border-color:rgba(196,122,138,.3);}
+.card-btn.pin:hover{background:rgba(196,122,138,.1);}
+.card-btn.blue{color:var(--blue);border-color:rgba(106,158,196,.3);}
+.card-btn.blue:hover{background:rgba(106,158,196,.1);}
+.slist-chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--tx2);background:var(--surf2);border:1px solid var(--bd);border-radius:4px;padding:1px 6px;cursor:pointer;margin-top:5px;}
+.slist-chip:hover{border-color:var(--acc);color:var(--acc);}
+
+/* Form */
+.task-form{background:var(--surf);border:1px solid var(--bd);padding:14px;border-radius:10px;margin-bottom:14px;}
+.form-title{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+.form-row{display:flex;gap:7px;margin-bottom:7px;}
+.form-row>*{flex:1;margin-bottom:0!important;min-width:0;}
+input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--bd);color:var(--tx);padding:7px 10px;border-radius:6px;margin-bottom:7px;font-size:12px;outline:none;font-family:'Geist',sans-serif;transition:border-color .15s;}
+input:focus,select:focus,textarea:focus{border-color:var(--acc);}
+.btn-primary{background:var(--acc);color:#FFFFFF;width:100%;padding:9px;margin-top:3px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;font-family:'Geist',sans-serif;transition:opacity .15s;}
+.btn-primary:hover{opacity:.85;}
+.form-check{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tx2);margin-bottom:7px;}
+.form-check input[type=checkbox]{width:auto;margin:0;}
+
+/* inline-editable select */
+.ie-wrap{position:relative;display:inline-flex;align-items:center;gap:4px;}
+.ie-select{background:var(--bg);border:1px solid var(--bd);color:var(--tx);border-radius:5px;padding:3px 24px 3px 8px;font-size:11px;font-family:'Geist',sans-serif;cursor:pointer;appearance:none;-webkit-appearance:none;outline:none;}
+.ie-select:focus{border-color:var(--acc);}
+
+/* Vendor Relations view */
+.vr-view{max-width:900px;}
+.vr-controls{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+.vr-tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.vr-tbl th{text-align:left;padding:8px 10px;border-bottom:2px solid var(--bd);color:var(--tx2);font-weight:500;font-size:10px;text-transform:uppercase;letter-spacing:.05em;cursor:pointer;user-select:none;white-space:nowrap;}
+.vr-tbl th:hover{color:var(--tx);}
+.vr-tbl td{padding:8px 10px;border-bottom:1px solid var(--bd);vertical-align:middle;font-size:12px;}
+.vr-tbl tr:hover td{background:var(--surf2);}
+.vr-tbl tbody tr{cursor:pointer;}
+.result-pill{display:inline-block;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:500;}
+.rp-approved{background:rgba(125,184,122,.2);color:var(--grn);}
+.rp-denied{background:rgba(196,99,90,.2);color:var(--red);}
+.rp-review{background:rgba(201,168,76,.2);color:var(--amb);}
+.rp-none{background:var(--surf2);color:var(--tx2);}
+.vr-filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.vr-filter{padding:4px 12px;border-radius:20px;border:1px solid var(--bd);background:transparent;color:var(--tx2);font-size:11px;cursor:pointer;font-family:'Geist',sans-serif;transition:.15s;}
+.vr-filter.active{background:var(--acc);color:#FFFFFF;border-color:var(--acc);}
+.vr-stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.vr-stat{background:var(--surf);border:1px solid var(--bd);border-radius:8px;padding:8px 14px;font-size:12px;}
+.vr-stat span{font-weight:600;color:var(--acc);}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100;display:flex;align-items:center;justify-content:center;}
+.modal{background:var(--surf);border:1px solid var(--bd);border-radius:12px;padding:22px;width:520px;max-width:94vw;max-height:92vh;overflow-y:auto;}
+.modal-lg{width:820px;}
+.modal-title{font-size:15px;font-weight:600;margin-bottom:14px;}
+.modal-actions{display:flex;gap:8px;margin-top:14px;justify-content:flex-end;}
+.modal-btn{padding:7px 16px;border-radius:6px;border:1px solid var(--bd);background:transparent;color:var(--tx);font-size:13px;cursor:pointer;font-family:'Geist',sans-serif;transition:.15s;}
+.modal-btn:hover{background:var(--surf2);}
+.modal-btn.primary{background:var(--acc);color:#FFFFFF;border-color:var(--acc);}
+.modal-btn.primary:hover{opacity:.85;background:var(--acc);}
+.modal-btn.grn{background:var(--grn);color:#FFFFFF;border-color:var(--grn);}
+.modal-btn.grn:hover{opacity:.85;}
+
+/* Shipment list */
+.slist-tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.slist-tbl th{padding:7px 6px;border-bottom:1px solid var(--bd);color:var(--tx2);font-size:10px;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;text-align:left;}
+.slist-tbl td{padding:4px 3px;border-bottom:1px solid var(--bd);vertical-align:middle;}
+.slist-tbl input{margin:0;padding:5px 7px;font-size:11px;width:100%;}
+.slist-del{background:transparent;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0 4px;}
+.slist-col-btn{background:transparent;border:none;color:var(--tx2);cursor:pointer;font-size:10px;padding:1px 3px;font-family:'Geist',sans-serif;border-radius:3px;transition:.1s;}
+.slist-col-btn:hover{background:var(--surf2);color:var(--tx);}
+.slist-add-btn{background:transparent;border:1px dashed var(--bd);color:var(--tx2);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:'Geist',sans-serif;transition:.15s;}
+.slist-add-btn:hover{border-color:var(--acc);color:var(--acc);}
+.paste-area{height:80px;resize:vertical;line-height:1.5;}
+
+.empty-col{text-align:center;padding:20px 10px;color:var(--tx2);font-size:12px;}
+
+/* ── Calendar ── */
+.cal-wrap{display:flex;gap:0;height:100%;min-height:0;}
+.cal-main{flex:1;min-width:0;overflow-y:auto;}
+.cal-panel{width:320px;min-width:320px;background:var(--surf);border-left:1px solid var(--bd);display:flex;flex-direction:column;overflow-y:auto;transition:width .2s;}
+.cal-panel.hidden{width:0;min-width:0;overflow:hidden;border:none;}
+.cal-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.cal-nav{background:transparent;border:1px solid var(--bd);color:var(--tx);border-radius:6px;padding:4px 12px;cursor:pointer;font-family:'Geist',sans-serif;font-size:13px;transition:.15s;}
+.cal-nav:hover{background:var(--surf2);}
+.cal-month-title{font-size:16px;font-weight:600;flex:1;}
+.cal-view-toggle{display:flex;gap:4px;}
+.cal-view-btn{padding:4px 12px;border-radius:6px;border:1px solid var(--bd);background:transparent;color:var(--tx2);font-size:12px;cursor:pointer;font-family:'Geist',sans-serif;transition:.15s;}
+.cal-view-btn.active{background:var(--acc);color:#FFFFFF;border-color:var(--acc);}
+
+/* Month grid */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--bd);border:1px solid var(--bd);border-radius:10px;overflow:hidden;}
+.cal-dow{background:var(--surf2);padding:6px 8px;font-size:10px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;text-align:center;}
+.cal-cell{background:var(--surf);padding:7px 8px;min-height:80px;cursor:pointer;transition:.1s;position:relative;}
+.cal-cell:hover{background:var(--surf2);}
+.cal-cell.other-month{opacity:.35;}
+.cal-cell.today{background:var(--surf2);box-shadow:inset 2px 0 0 var(--acc);}
+.cal-cell.selected{background:var(--surf2);box-shadow:inset 2px 0 0 var(--blue);}
+.cal-date{font-size:12px;font-weight:500;color:var(--tx2);margin-bottom:4px;}
+.cal-cell.today .cal-date{color:var(--tx);font-weight:600;}
+.cal-note-preview{font-size:11px;color:var(--tx2);line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.cal-check-bar{display:flex;gap:3px;margin-top:4px;flex-wrap:wrap;}
+.cal-check-dot{width:7px;height:7px;border-radius:50%;background:var(--bd);}
+.cal-check-dot.done{background:var(--grn);}
+
+/* Week grid */
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;}
+.week-cell{background:var(--surf);border:1px solid var(--bd);border-radius:10px;padding:12px;min-height:200px;cursor:pointer;transition:.15s;}
+.week-cell:hover{border-color:var(--acc);}
+.week-cell.today{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc);}
+.week-cell.selected{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue);}
+.week-dow{font-size:10px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+.week-date{font-size:18px;font-weight:600;color:var(--tx);margin-bottom:8px;}
+.week-cell.today .week-date{color:var(--acc);}
+.week-note{font-size:12px;color:var(--tx2);line-height:1.5;white-space:pre-wrap;}
+
+/* Day panel */
+.panel-header{padding:16px 16px 0;border-bottom:1px solid var(--bd);padding-bottom:12px;}
+.panel-date{font-size:15px;font-weight:600;margin-bottom:4px;}
+.panel-close{background:none;border:none;color:var(--tx2);cursor:pointer;font-size:18px;padding:0;}
+.panel-body{padding:14px 16px;flex:1;}
+.panel-label{font-size:10px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+.day-note{width:100%;background:var(--bg);border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:9px 11px;font-size:13px;font-family:'Geist',sans-serif;resize:none;outline:none;line-height:1.6;min-height:120px;transition:border-color .15s;margin-bottom:14px;}
+.day-note:focus{border-color:var(--acc);}
+.checklist-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--bd);}
+.checklist-item:last-child{border:none;}
+.cl-check{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--bd);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg);transition:.1s;}
+.cl-check.checked{background:var(--grn);border-color:var(--grn);}
+.cl-check.checked::after{content:'✓';font-size:10px;color:#fff;font-weight:600;}
+.cl-text{flex:1;font-size:13px;background:transparent;border:none;color:var(--tx);outline:none;font-family:'Geist',sans-serif;}
+.cl-text.done-text{text-decoration:line-through;color:var(--tx2);}
+.cl-del{background:none;border:none;color:var(--tx2);cursor:pointer;font-size:14px;padding:0 2px;opacity:0;transition:.1s;}
+.checklist-item:hover .cl-del{opacity:1;}
+.add-cl-btn{background:transparent;border:1px dashed var(--bd);color:var(--tx2);border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:'Geist',sans-serif;width:100%;margin-top:8px;transition:.15s;}
+.add-cl-btn:hover{border-color:var(--acc);color:var(--acc);}
+
+/* Vendor preview modal */
+.vr-preview-tbl{width:100%;border-collapse:collapse;font-size:12px;max-height:300px;overflow-y:auto;display:block;}
+.vr-preview-tbl th{padding:6px 8px;border-bottom:1px solid var(--bd);color:var(--tx2);font-size:10px;text-transform:uppercase;text-align:left;}
+.vr-preview-tbl td{padding:5px 8px;border-bottom:1px solid var(--bd);}
+
+/* ── Drink Tracker ── */
+.drink-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--bd);position:relative;}
+.drink-row:last-child{border:none;}
+.drink-emoji{font-size:14px;flex-shrink:0;}
+.drink-name{flex:1.5;min-width:0;position:relative;}
+.drink-shop{flex:1.2;min-width:0;position:relative;}
+.drink-price{width:60px;flex-shrink:0;}
+.drink-input{background:transparent;border:none;color:var(--tx);font-size:12px;font-family:'Geist',sans-serif;width:100%;outline:none;padding:2px 0;}
+.drink-input::placeholder{color:var(--tx2);opacity:.7;}
+.drink-input:focus{border-bottom:1px solid var(--acc);}
+.drink-del{background:none;border:none;color:var(--tx2);cursor:pointer;font-size:13px;padding:0 2px;opacity:0;transition:.1s;flex-shrink:0;}
+.drink-row:hover .drink-del{opacity:1;}
+.drink-total{font-size:11px;color:var(--tx2);margin-top:6px;text-align:right;}
+.drink-total span{color:var(--amb);font-weight:600;}
+/* Drink autocomplete dropdown */
+.drink-ac-drop{position:absolute;top:calc(100% + 2px);left:0;right:0;background:var(--surf);border:1px solid var(--bd);border-radius:8px;z-index:300;box-shadow:0 6px 20px rgba(0,0,0,.35);max-height:160px;overflow-y:auto;}
+.drink-ac-item{padding:7px 12px;font-size:12px;cursor:pointer;display:flex;flex-direction:column;gap:2px;}
+.drink-ac-item:hover{background:var(--surf2);}
+.drink-ac-name{color:var(--tx);font-weight:500;}
+.drink-ac-sub{font-size:10px;color:var(--tx2);}
+/* Mobile-only calendar bottom sheet */
+@media(max-width:768px){
+  .cal-wrap{flex-direction:column;height:auto;}
+  .cal-main{overflow-y:visible;padding:0 0 8px 0 !important;}
+  .cal-panel{
+    position:fixed;bottom:0;left:0;right:0;
+    width:100% !important;min-width:0 !important;
+    max-height:75vh;overflow-y:auto;
+    border-left:none !important;border-top:2px solid var(--bd) !important;
+    border-radius:16px 16px 0 0;
+    z-index:50;
+    transition:transform .25s ease;
+    box-shadow:0 -8px 30px rgba(0,0,0,.4);
+  }
+  .cal-panel::before{
+    content:'';display:block;width:36px;height:4px;
+    background:var(--bd);border-radius:2px;
+    margin:10px auto 4px;
+  }
+  .cal-grid{font-size:11px;}
+  .cal-cell{min-height:54px;padding:4px 5px;}
+  .cal-date{font-size:12px;}
+  .cal-note-preview{display:none;}
+  .week-grid{grid-template-columns:1fr !important;gap:6px;}
+  .week-cell{min-height:80px;}
+  .drink-row{flex-wrap:wrap;gap:4px;}
+  .drink-shop{min-width:80px;}
+  .drink-price{width:50px;}
+  .panel-body{padding:10px 14px 24px;}
+}
+.sch-modal{width:360px;}
+.sch-date-input{font-size:16px;padding:10px;text-align:center;cursor:pointer;}
+.cal-task-chip{display:flex;align-items:center;gap:6px;background:var(--surf2);border:1px solid var(--bd);border-radius:6px;padding:5px 8px;margin-bottom:4px;font-size:11px;cursor:pointer;transition:.1s;}
+.cal-task-chip:hover{border-color:var(--blue);}
+.cal-task-chip .ctc-cat{font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(160,160,160,.15);color:var(--tx2);white-space:nowrap;}
+.cal-task-chip .ctc-desc{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--tx);}
+.cal-task-chip .ctc-ws{font-size:10px;color:var(--tx2);}
+.cal-task-chip .ctc-rm{background:none;border:none;color:var(--tx2);cursor:pointer;font-size:13px;padding:0 2px;opacity:0;transition:.1s;}
+.cal-task-chip:hover .ctc-rm{opacity:1;}
+.cal-task-chip.done-chip{opacity:.5;}
+.ctc-status{font-size:9px;padding:1px 5px;border-radius:3px;white-space:nowrap;}
+.ctc-s-todo{background:rgba(160,160,160,.12);color:var(--tx2);}
+.ctc-s-wip{background:rgba(90,143,184,.15);color:var(--blue);}
+.ctc-s-done{background:rgba(109,184,106,.15);color:var(--grn);}
+/* Add task to day */
+.add-task-row{display:flex;gap:6px;margin-top:8px;}
+.add-task-row input{flex:1;margin:0;font-size:12px;}
+.add-task-search{position:relative;}
+.add-task-drop{position:absolute;top:calc(100% + 3px);left:0;right:0;background:var(--surf);border:1px solid var(--bd);border-radius:8px;z-index:200;max-height:160px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.3);}
+.add-task-item{padding:7px 10px;font-size:12px;cursor:pointer;color:var(--tx);}
+.add-task-item:hover{background:var(--surf2);}
+.add-task-item .ati-ws{font-size:10px;color:var(--tx2);}
+
+/* ── Autocomplete ── */
+.ac-wrap{position:relative;width:100%;}
+.ac-input{width:100%;background:var(--bg);border:1px solid var(--bd);color:var(--tx);padding:7px 10px;border-radius:6px;font-size:12px;outline:none;font-family:'Geist',sans-serif;transition:border-color .15s;box-sizing:border-box;}
+.ac-input:focus{border-color:var(--acc);}
+.ac-drop{position:absolute;top:calc(100% + 3px);left:0;right:0;background:var(--surf);border:1px solid var(--bd);border-radius:8px;z-index:200;max-height:180px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.35);}
+.ac-item{padding:7px 12px;font-size:12px;cursor:pointer;color:var(--tx);display:flex;align-items:center;gap:6px;}
+.ac-item:hover,.ac-item.focused{background:var(--surf2);}
+.ac-item mark{background:transparent;color:var(--acc);font-weight:600;}
+.ac-empty{padding:10px 12px;font-size:12px;color:var(--tx2);}
+.ac-add{color:var(--acc);font-style:italic;}
+
+/* ── No-Convert List ── */
+.nc-warn{background:rgba(192,90,82,.12);border:1px solid rgba(192,90,82,.35);border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:var(--red);display:flex;align-items:flex-start;gap:8px;}
+.nc-warn-icon{font-size:15px;flex-shrink:0;margin-top:-1px;}
+.nc-warn-body{flex:1;}
+.nc-warn-title{font-weight:600;margin-bottom:2px;}
+.nc-section{background:var(--surf);border:1px solid var(--bd);border-radius:10px;padding:16px;margin-bottom:16px;}
+.nc-section-title{font-size:12px;font-weight:600;color:var(--tx);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.nc-count{font-size:11px;font-weight:400;color:var(--tx2);background:var(--surf2);border-radius:10px;padding:1px 8px;}
+.nc-paste-area{height:70px;resize:vertical;line-height:1.5;font-family:'Geist',sans-serif;}
+.nc-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;}
+.nc-table th{text-align:left;padding:6px 10px;border-bottom:1px solid var(--bd);font-size:10px;font-weight:500;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;}
+.nc-table td{padding:7px 10px;border-bottom:1px solid var(--bd);vertical-align:middle;}
+.nc-table tr:last-child td{border:none;}
+.nc-table tr:hover td{background:var(--surf2);}
+.nc-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:500;background:rgba(192,90,82,.15);color:var(--red);}
+.nc-note-input{background:transparent;border:none;color:var(--tx2);font-size:12px;font-family:'Geist',sans-serif;width:100%;outline:none;padding:0;}
+.nc-note-input:focus{color:var(--tx);}
+.nc-search{margin-bottom:10px;}
+.tag-area{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px;min-height:0;}
+.tag-suggest{padding:3px 10px;border-radius:12px;border:1px solid var(--bd);background:transparent;color:var(--tx2);font-size:11px;cursor:pointer;font-family:'Geist',sans-serif;transition:.15s;display:flex;align-items:center;gap:4px;}
+.tag-suggest:hover{border-color:var(--acc);color:var(--acc);background:rgba(196,132,74,.08);}
+.tag-suggest.active-tag{background:var(--acc);color:#FFFFFF;border-color:var(--acc);}
+.tag-suggest .ts-label{font-weight:500;}
+.tag-suggest .ts-key{opacity:.6;font-size:10px;}
+
+/* ── Rule manager ── */
+.rule-toggle{font-size:11px;color:var(--tx2);cursor:pointer;display:flex;align-items:center;gap:4px;margin-bottom:6px;user-select:none;}
+.rule-toggle:hover{color:var(--tx);}
+.rule-list{background:var(--surf2);border:1px solid var(--bd);border-radius:8px;padding:10px;margin-bottom:7px;}
+.rule-row{display:flex;gap:6px;align-items:center;margin-bottom:5px;}
+.rule-row input{margin:0;padding:5px 8px;font-size:11px;flex:1;}
+.rule-row select{margin:0;padding:5px 8px;font-size:11px;flex:1.5;}
+.rule-del{background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0 3px;flex-shrink:0;}
+
+/* ── Morning Brief ── */
+.brief-wrap{background:var(--surf);border:1px solid var(--bd);border-radius:12px;padding:18px 20px;margin-bottom:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.brief-date{grid-column:1/-1;display:flex;align-items:baseline;gap:10px;margin-bottom:4px;}
+.brief-day{font-size:22px;font-weight:600;color:var(--tx);}
+.brief-dow{font-size:13px;color:var(--tx2);}
+.brief-greeting{font-size:12px;color:var(--tx2);grid-column:1/-1;margin-bottom:8px;padding-bottom:12px;border-bottom:1px solid var(--bd);}
+.brief-card{display:flex;flex-direction:column;gap:4px;}
+.brief-card-label{font-size:10px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em;}
+.brief-card-val{font-size:20px;font-weight:600;color:var(--tx);line-height:1;}
+.brief-card-sub{font-size:11px;color:var(--tx2);}
+.brief-card-sub a{color:var(--acc);cursor:pointer;text-decoration:none;}
+.brief-card-sub a:hover{text-decoration:underline;}
+.brief-cal-note{grid-column:1/-1;padding-top:12px;border-top:1px solid var(--bd);font-size:12px;color:var(--tx2);line-height:1.5;cursor:pointer;}
+.brief-cal-note:hover{color:var(--tx);}
+.brief-cal-empty{font-style:italic;opacity:.5;}
+.brief-tasks{grid-column:1/-1;padding-top:12px;border-top:1px solid var(--bd);}
+.brief-task-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--bd);font-size:12px;}
+.brief-task-item:last-child{border:none;}
+.brief-task-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.brief-task-desc{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--tx);}
+.brief-task-ws{font-size:10px;color:var(--tx2);white-space:nowrap;}
+@media(max-width:768px){.brief-wrap{grid-template-columns:1fr 1fr;}}
+
+/* ── Weekly Review ── */
+.wr-section{background:var(--surf);border:1px solid var(--bd);border-radius:10px;padding:16px;margin-bottom:14px;}
+.wr-section-title{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.wr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+.wr-chip{background:var(--surf2);border:1px solid var(--bd);border-radius:8px;padding:10px 14px;text-align:center;}
+.wr-chip .wc-val{font-size:22px;font-weight:600;color:var(--tx);line-height:1;}
+.wr-chip .wc-lbl{font-size:10px;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-top:3px;}
+.wr-task-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bd);font-size:12px;}
+.wr-task-row:last-child{border:none;}
+.wr-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.wr-bm-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--bd);font-size:12px;}
+.wr-bm-row:last-child{border:none;}
+.wr-bar-wrap{flex:1;margin:0 12px;height:6px;background:var(--surf2);border-radius:3px;overflow:hidden;}
+.wr-bar{height:100%;background:var(--acc);border-radius:3px;}
+.wr-export-area{width:100%;height:200px;background:var(--bg);border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:12px;font-size:12px;font-family:'Geist',monospace;resize:vertical;outline:none;line-height:1.7;}
+@media(max-width:768px){.wr-grid{grid-template-columns:1fr 1fr;}}
+
+/* ── Teams Parser ── */
+.teams-paste{height:130px;resize:vertical;line-height:1.6;font-size:12px;}
+.teams-result-box{background:var(--surf2);border:1px solid var(--bd);border-radius:8px;padding:14px;margin-bottom:12px;}
+.teams-result-title{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;}
+.teams-action-badge{display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600;margin-bottom:10px;}
+.teams-sku-grid{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;}
+.teams-sku-chip{font-size:11px;padding:2px 8px;border-radius:4px;background:var(--surf);border:1px solid var(--bd);color:var(--tx);font-family:'Geist',monospace;}
+.teams-sku-chip.nc-hit{border-color:rgba(192,90,82,.5);background:rgba(192,90,82,.08);color:var(--red);}
+.teams-field-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;}
+.teams-field-row label{font-size:11px;color:var(--tx2);min-width:50px;flex-shrink:0;}
+.teams-field-row select,.teams-field-row input{margin:0;flex:1;min-width:120px;}
+.teams-nc-warn{font-size:11px;color:var(--red);padding:6px 10px;background:rgba(192,90,82,.1);border-radius:6px;margin-bottom:10px;}
+.teams-empty{text-align:center;padding:24px;color:var(--tx2);font-size:13px;}</style>
+</head>
+<body data-theme="dark">
+
+<div class="sidebar">
+  <div class="sidebar-logo">Workflow Manager</div>
+  <div class="nav-section">
+    <div class="nav-item dashboard-link" id="nav-dashboard" onclick="switchView('dashboard')">🏠 Dashboard</div>
+    <div class="nav-item" id="nav-teams" onclick="switchView('teams')">💬 Teams 解析</div>
+    <div class="nav-item" id="nav-weekly" onclick="switchView('weekly')">📊 每週回顧</div>
+    <div class="nav-item" id="nav-calendar" onclick="switchView('calendar')">📅 行事曆</div>
+    <div class="nav-item" id="nav-vendor" onclick="switchView('vendor')">🏢 Vendor Relations</div>
+    <div class="nav-item" id="nav-noconvert" onclick="switchView('noconvert')">🚫 No-Convert List</div>
+    <div class="nav-item" id="nav-mapping" onclick="switchView('mapping')">👥 BM / Vendor Map</div>
+  </div>
+  <div class="nav-section" id="sidebar-content"></div>
+  <div class="sidebar-footer">
+    <button class="sidebar-btn" onclick="addFolder()">+ Folder</button>
+    <button class="sidebar-btn" onclick="addWorkspace()">+ Workspace</button>
+    <div class="sidebar-actions">
+      <button class="sidebar-btn" style="flex:1" onclick="toggleTheme()">🌓 Mode</button>
+      <button class="sidebar-btn" style="flex:1" onclick="triggerImport()">📥 Import</button>
+    </div>
+  </div>
+  <input type="file" id="import-file" class="hidden-input" accept=".xlsx,.xls,.csv">
+  <input type="file" id="vr-import-file" class="hidden-input" accept=".xlsx,.xls,.csv">
+</div>
+
+<div class="main">
+  <header>
+    <div class="view-title" id="view-title" onclick="handleTitleClick()">Dashboard</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span id="sync-indicator" title="同步狀態"></span>
+      <input id="global-search" type="text" placeholder="Search..." style="margin:0;width:170px;" oninput="render()">
+    </div>
+  </header>
+  <div class="content" id="content-area"></div>
+</div>
+
+<!-- Task Edit Modal -->
+<div class="modal-overlay" id="edit-modal" style="display:none" onclick="if(event.target.id==='edit-modal')closeEditModal()">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Edit Task</div>
+    <input id="edit-desc" placeholder="Task description..." oninput="renderTagSuggestions('edit-desc','edit-tag-area','edit-cat')">
+    <div id="edit-tag-area" class="tag-area"></div>
+    <div class="form-row">
+      <select id="edit-cat">
+        <option>Create listing</option><option>Fix listing</option><option>Convert Barcode</option>
+        <option>Create Sell Yours</option><option>LOA</option><option>問題排查</option><option>其他</option>
+      </select>
+      <select id="edit-status">
+        <option value="todo">Todo</option><option value="wip">進行中</option><option value="done">Done</option><option value="trash">Trash</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div style="position:relative">
+        <input id="edit-bm" class="ac-input" placeholder="BM name" autocomplete="off">
+        <div class="ac-drop" id="edit-bm-drop" style="display:none"></div>
+      </div>
+      <div style="position:relative">
+        <input id="edit-vendor" class="ac-input" placeholder="Vendor name" autocomplete="off">
+        <div class="ac-drop" id="edit-vendor-drop" style="display:none"></div>
+      </div>
+    </div>
+    <div class="form-row">
+      <input id="edit-asin" placeholder="ASIN">
+      <input id="edit-sku" placeholder="SKU">
+    </div>
+    <input id="edit-link" placeholder="Reference link (https://...)">
+    <div class="form-check"><input type="checkbox" id="edit-pinned"><label for="edit-pinned">⭐ 標記優先</label></div>
+    <div class="form-check"><input type="checkbox" id="edit-recurring" onchange="onEditRecurringChange()"><label for="edit-recurring">🔄 週期任務</label></div>
+    <div id="edit-rec-wrap" style="display:none;background:var(--surf2);border:1px solid var(--bd);border-radius:8px;padding:12px;margin-bottom:7px;">
+      <div style="margin-bottom:8px;">
+        <label style="font-size:11px;color:var(--tx2);display:block;margin-bottom:4px;">週期</label>
+        <select id="edit-rec-period" onchange="onEditPeriodChange()" style="margin:0;">
+          <option value="daily">每日</option>
+          <option value="weekly">每週</option>
+          <option value="monthly">每月</option>
+        </select>
+      </div>
+      <div id="edit-rec-weekly" style="display:none;">
+        <label style="font-size:11px;color:var(--tx2);display:block;margin-bottom:5px;">每週哪幾天</label>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;" id="edit-dow-wrap">
+          ${['日','一','二','三','四','五','六'].map((d,i)=>`
+            <label style="display:flex;align-items:center;gap:3px;font-size:12px;cursor:pointer;">
+              <input type="checkbox" class="edit-dow-cb" value="${i}" style="width:auto;margin:0;"> ${d}
+            </label>`).join('')}
+        </div>
+      </div>
+      <div id="edit-rec-monthly" style="display:none;">
+        <label style="font-size:11px;color:var(--tx2);display:block;margin-bottom:4px;">每月哪天</label>
+        <select id="edit-rec-monthday" style="margin:0;">
+          <option value="1">月初 (1日)</option>
+          <option value="last">月底 (最後一天)</option>
+          ${Array.from({length:28},(_, i)=>`<option value="${i+2}">${i+2} 日</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeEditModal()">Cancel</button>
+      <button class="modal-btn primary" onclick="saveEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Shipment List Modal -->
+<div class="modal-overlay" id="slist-modal" style="display:none" onclick="if(event.target.id==='slist-modal')closeSlistModal()">
+  <div class="modal modal-lg">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+      <div class="modal-title" style="margin:0">📋 出貨清單</div>
+      <div style="display:flex;gap:6px;">
+        <button class="modal-btn" onclick="slistCopyAll()">📋 複製全部</button>
+        <button class="modal-btn grn" onclick="slistExport()">⬇ 下載 CSV</button>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:12px;" id="slist-task-desc"></div>
+
+    <div style="margin-bottom:10px;">
+      <div style="font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">貼上清單（Excel / Teams Tab 或逗號分隔）</div>
+      <textarea id="slist-paste-area" class="paste-area" placeholder="直接貼上整張表格，系統自動辨識欄位標題&#10;Merchant SKU / Qty / Units per Box / Number of Boxes / Barcode / ASIN / Model Number"></textarea>
+      <button class="slist-add-btn" style="border-style:solid;border-color:var(--acc);color:var(--acc);background:rgba(196,132,74,.08);width:100%;margin-top:4px;" onclick="parsePaste()">⚡ 解析並匯入</button>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;gap:8px;">
+      <div style="font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;" id="slist-count-label">清單</div>
+      <button class="slist-add-btn" style="width:auto;padding:4px 12px;" onclick="slistAddRow()">+ 新增一列</button>
+    </div>
+
+    <div style="overflow-x:auto;max-height:340px;overflow-y:auto;">
+      <table class="slist-tbl">
+        <thead id="slist-thead"></thead>
+        <tbody id="slist-body"></tbody>
+      </table>
+    </div>
+    <div id="slist-parse-info" style="display:none;font-size:11px;color:var(--grn);margin-top:6px;padding:6px 10px;background:rgba(125,184,122,.1);border-radius:6px;"></div>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeSlistModal()">Close</button>
+      <button class="modal-btn primary" onclick="saveSlist()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Vendor Relation Edit Modal -->
+<div class="modal-overlay" id="vr-modal" style="display:none" onclick="if(event.target.id==='vr-modal')closeVrModal()">
+  <div class="modal">
+    <div class="modal-title" id="vr-modal-title">Vendor Relation</div>
+    <div class="form-row">
+      <div><label style="font-size:11px;color:var(--tx2)">Vendor / Distributor</label><input id="vr-vendor" list="vr-vendor-list" placeholder="Vendor name"><datalist id="vr-vendor-list"></datalist></div>
+      <div><label style="font-size:11px;color:var(--tx2)">Brand</label><input id="vr-brand" placeholder="Brand name"></div>
+    </div>
+    <div class="form-row">
+      <div><label style="font-size:11px;color:var(--tx2)">Source</label>
+        <select id="vr-source"><option value="Admin">Admin</option><option value="Manual">Manual</option><option value="LOA">LOA</option><option value="Other">Other</option></select>
+      </div>
+      <div><label style="font-size:11px;color:var(--tx2)">Result</label>
+        <select id="vr-result"><option value="Approved">Approved</option><option value="Under Review">Under Review</option><option value="Denied">Denied</option><option value="">—</option></select>
+      </div>
+    </div>
+    <label style="font-size:11px;color:var(--tx2)">Remark / Special Note</label>
+    <input id="vr-remark" placeholder="Notes, LOA links, special conditions...">
+    <label style="font-size:11px;color:var(--tx2)">Name (who handled)</label>
+    <input id="vr-name" placeholder="e.g. Ellie Chen">
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeVrModal()">Cancel</button>
+      <button class="modal-btn primary" onclick="saveVr()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mapping Edit Modal -->
+<div class="modal-overlay" id="map-modal" style="display:none" onclick="if(event.target.id==='map-modal')closeMapModal()">
+  <div class="modal">
+    <div class="modal-title" id="map-modal-title">Edit BM Mapping</div>
+    <label style="font-size:11px;color:var(--tx2)">BM Name</label>
+    <input id="map-bm" placeholder="BM Name">
+    <label style="font-size:11px;color:var(--tx2)">Vendor Names（逗號分隔多個）</label>
+    <input id="map-vendors" placeholder="Vendor A, Vendor B">
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeMapModal()">Cancel</button>
+      <button class="modal-btn primary" onclick="saveMapping()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Schedule Date Picker Modal -->
+<div class="modal-overlay" id="sch-modal" style="display:none" onclick="if(event.target.id==='sch-modal')closeSchModal()">
+  <div class="modal sch-modal">
+    <div class="modal-title">📅 排程到行事曆</div>
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:10px;" id="sch-task-label"></div>
+    <input type="date" id="sch-date-input" class="sch-date-input">
+    <div style="font-size:11px;color:var(--tx2);margin:8px 0 4px">或快速選擇：</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;" id="sch-quick-btns"></div>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeSchModal()">Cancel</button>
+      <button class="modal-btn" style="color:var(--red)" id="sch-remove-btn" onclick="scheduleTask(null)" style="display:none">移除排程</button>
+      <button class="modal-btn primary" onclick="scheduleTask(document.getElementById('sch-date-input').value)">確定</button>
+    </div>
+  </div>
+</div>
+
+<!-- Vendor Bulk Import Preview Modal -->
+<div class="modal-overlay" id="vr-preview-modal" style="display:none" onclick="if(event.target.id==='vr-preview-modal')closeVrPreview()">
+  <div class="modal modal-lg">
+    <div class="modal-title">📥 批量匯入 Vendor Relations 預覽</div>
+    <div id="vr-preview-info" style="font-size:12px;color:var(--tx2);margin-bottom:10px;"></div>
+    <div style="overflow:auto;max-height:320px;border:1px solid var(--bd);border-radius:8px;">
+      <table class="vr-preview-tbl">
+        <thead id="vr-preview-thead"></thead>
+        <tbody id="vr-preview-body"></tbody>
+      </table>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeVrPreview()">Cancel</button>
+      <button class="modal-btn primary" onclick="confirmVrImport()">確認匯入</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const FREQ_LABEL={daily:'每日',weekly:'每週',biweekly:'每兩週',monthly:'每月'};
+const STATUS_LABEL={todo:'Todo',wip:'進行中',done:'Done',trash:'Trash'};
+
+/* ── Supabase Config ── */
+const SB_URL='https://omkyoalqeaywwizciizg.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ta3lvYWxxZWF5d3dpemNpaXpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3NjgyMzgsImV4cCI6MjA5MjM0NDIzOH0.hkzltzyx2jFG509trY_wwUIXlW0I922ZpOS9Q4S4da8';
+const SB_HEADERS={'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'resolution=merge-duplicates'};
+
+let _syncTimer=null;
+let _syncStatus='idle'; // 'idle'|'saving'|'ok'|'err'|'offline'
+
+function setSyncStatus(s){
+  _syncStatus=s;
+  const el=document.getElementById('sync-indicator');
+  if(!el)return;
+  const map={idle:['','',' '],saving:['⟳','var(--tx2)','正在同步…'],ok:['✓','var(--grn)','已同步'],err:['✕','var(--red)','同步失敗（資料已存本機）'],offline:['⚡','var(--amb)','離線模式']};
+  const[icon,color,tip]=map[s]||map.idle;
+  el.innerHTML=`<span style="color:${color};font-size:11px;cursor:default" title="${tip}">${icon}</span>`;
+}
+
+async function pushToSupabase(){
+  setSyncStatus('saving');
+  try{
+    const res=await fetch(`${SB_URL}/rest/v1/app_state`,{
+      method:'POST',
+      headers:SB_HEADERS,
+      body:JSON.stringify({id:'singleton',data:state,updated_at:new Date().toISOString()})
+    });
+    if(!res.ok)throw new Error(res.status);
+    setSyncStatus('ok');
+    setTimeout(()=>setSyncStatus('idle'),3000);
+  }catch(e){
+    setSyncStatus(navigator.onLine?'err':'offline');
+  }
+}
+
+async function pullFromSupabase(){
+  try{
+    const res=await fetch(`${SB_URL}/rest/v1/app_state?id=eq.singleton&select=data`,{headers:{...SB_HEADERS,'Accept':'application/json'}});
+    if(!res.ok)throw new Error(res.status);
+    const rows=await res.json();
+    if(rows&&rows.length&&rows[0].data&&Object.keys(rows[0].data).length){
+      // compare updated_at if available, take newer
+      const remote=rows[0].data;
+      const localStr=localStorage.getItem('listing_v13');
+      if(!localStr){
+        state=remote;
+      } else {
+        // prefer remote if it has more tasks (simple heuristic)
+        const local=JSON.parse(localStr);
+        const remoteTaskCount=remote.workspaces?.reduce((s,w)=>s+(w.tasks?.length||0),0)||0;
+        const localTaskCount=local.workspaces?.reduce((s,w)=>s+(w.tasks?.length||0),0)||0;
+        state=remoteTaskCount>=localTaskCount?remote:local;
+      }
+      saveDay();
+      return true;
+    }
+  }catch(e){
+    setSyncStatus(navigator.onLine?'err':'offline');
+  }
+  return false;
+}
+
+const DEFAULT_STATE={
+  theme:'dark',view:'dashboard',
+  folders:[{name:'Amazon Projects',id:'f_main',wsIds:['ws_default']}],
+  workspaces:[{name:'Store US',id:'ws_default',tasks:[]}],
+  bms:[],mapping:{},recurring:[],
+  vendorRelations:[],
+  lastResetDate:null,
+  calendar:{},
+  noConvert:{asins:[],vendors:[]},
+  calRecurring:[]
+};
+
+let state=JSON.parse(localStorage.getItem('listing_v13')||'null')||JSON.parse(JSON.stringify(DEFAULT_STATE));
+
+/* ── save / saveDay — write local immediately, debounce cloud push ── */
+function save(){
+  saveDay();
+  document.body.setAttribute('data-theme',state.theme);
+  render();
+  schedulePush();
+}
+function saveDay(){
+  saveDay();
+  schedulePush();
+}
+function schedulePush(){
+  clearTimeout(_syncTimer);
+  _syncTimer=setTimeout(pushToSupabase,1200);
+}
+
+/* ── Startup: recurring reset + trash cleanup ── */
+function runStartupChecks(){
+  const today=new Date();
+  const todayStr=today.toISOString().slice(0,10);
+  const lastReset=state.lastResetDate||'';
+
+  // Trash cleanup: remove tasks trashed > 7 days ago
+  const cutoff=new Date(today.getTime()-7*86400000).toISOString().slice(0,10);
+  state.workspaces.forEach(ws=>{
+    ws.tasks=ws.tasks.filter(t=>{
+      if(t.status!=='trash')return true;
+      const trashedOn=t.trashedOn||todayStr;
+      return trashedOn>=cutoff;
+    });
+  });
+
+  // Recurring reset: if period boundary crossed, reset Done → Todo
+  if(lastReset!==todayStr){
+    state.workspaces.forEach(ws=>{
+      ws.tasks.forEach(t=>{
+        if(!t.period||t.period==='none'||t.status!=='done')return;
+        if(shouldResetToday(t,today,lastReset)){
+          t.status='todo';
+          t.lastResetDate=todayStr;
+        }
+      });
+    });
+    state.lastResetDate=todayStr;
+    saveDay();
+  }
+
+  // Cal recurring: inject today's recurring items if not already present
+  if(!state.calRecurring)state.calRecurring=[];
+  const calDay=getDay(todayStr);
+  state.calRecurring.forEach(cr=>{
+    if(!cr.period||cr.period==='none')return;
+    const pseudoTask={period:cr.period,periodValue:cr.periodValue};
+    if(!shouldResetToday(pseudoTask,today,''))return;
+    // check if already injected today
+    const alreadyIn=calDay.items.find(x=>x._crId===cr.id);
+    if(!alreadyIn){
+      calDay.items.push({text:cr.text,done:false,_crId:cr.id});
+    }
+    // if previously done and new period started, reset it
+    if(alreadyIn&&alreadyIn.done&&cr.lastDoneDate&&cr.lastDoneDate!==todayStr){
+      alreadyIn.done=false;
+    }
+  });
+  localStorage.setItem('listing_v13',JSON.stringify(state));  // local only, no push during startup
+}
+
+function shouldResetToday(task,today,lastReset){
+  const period=task.period;
+  const dow=today.getDay(); // 0=Sun
+  const date=today.getDate();
+  if(period==='daily') return true;
+  if(period==='weekly'){
+    const activeDays=task.periodValue||[1]; // array of dow ints
+    return activeDays.includes(dow);
+  }
+  if(period==='monthly'){
+    const pv=task.periodValue; // '1','last','2'..'31'
+    if(pv==='last'){
+      const lastDay=new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
+      return date===lastDay;
+    }
+    return date===parseInt(pv)||false;
+  }
+  return false;
+}
+
+function isPeriodOverdue(task){
+  // Returns true if task has a period set, is NOT done, and the period is active today
+  if(!task.period||task.period==='none')return false;
+  if(task.status==='done')return false;
+  const today=new Date();
+  return shouldResetToday(task,today,state.lastResetDate||'');
+}
+
+let editTarget=null,mapEditBm=null,slistTarget=null,_slistRows=[],vrEditId=null;
+
+function toggleTheme(){state.theme=state.theme==='dark'?'light':'dark';save();}
+function switchView(v){state.view=v;save();}
+
+/* ── Nav ── */
+function renameFolder(id){
+  const f=state.folders.find(x=>x.id===id);
+  const n=prompt('修改 Folder（空值刪除）:',f.name);if(n===null)return;
+  if(!n.trim()){if(confirm('確定刪除？'))state.folders=state.folders.filter(x=>x.id!==id);}else f.name=n.trim();
+  save();
+}
+function renameWorkspace(id){
+  const ws=state.workspaces.find(w=>w.id===id);
+  const n=prompt('修改 Workspace（空值刪除）:',ws.name);if(n===null)return;
+  if(!n.trim()){if(confirm('確定刪除？')){state.workspaces=state.workspaces.filter(w=>w.id!==id);state.folders.forEach(f=>f.wsIds=f.wsIds.filter(x=>x!==id));state.view='dashboard';}}else ws.name=n.trim();
+  save();
+}
+function addWorkspace(){const n=prompt('Workspace Name?');if(!n)return;const id='ws'+Date.now();state.workspaces.push({name:n,id,tasks:[]});state.folders[0].wsIds.push(id);state.view=id;save();}
+function addFolder(){const n=prompt('Folder Name?');if(n){state.folders.push({name:n,id:'f'+Date.now(),wsIds:[]});save();}}
+
+/* ── Import (BM mapping Excel) ── */
+function triggerImport(){document.getElementById('import-file').click();}
+document.getElementById('import-file').addEventListener('change',function(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    const wb=XLSX.read(ev.target.result,{type:'binary'});
+    const json=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    let added=0;
+    json.forEach(row=>{
+      const bm=(row.BM||row['BM Name']||'').trim();
+      const vendor=(row.Vendor||row['Vendor Name']||'').trim();
+      if(!bm||!vendor)return;
+      if(!state.mapping[bm])state.mapping[bm]=[];
+      if(!state.mapping[bm].includes(vendor)){state.mapping[bm].push(vendor);added++;}
+      if(!state.bms.includes(bm))state.bms.push(bm);
+    });
+    save();alert(`匯入完成！新增 ${added} 筆對應，共 ${state.bms.length} 個 BM`);
+  };
+  reader.readAsBinaryString(file);e.target.value='';
+});
+
+/* ── Autocomplete engine ── */
+const AC={
+  // Build AC on an input. opts: ()=>string[], onSelect: (val)=>void, allowNew: bool
+  init(inputEl, dropId, getOpts, onSelect, allowNew=true){
+    let idx=-1;
+    const drop=document.getElementById(dropId);
+    if(!drop)return;
+
+    function matches(list, q){
+      if(!q)return list.slice(0,30);
+      const lq=q.toLowerCase();
+      // prioritise starts-with, then contains
+      const sw=list.filter(x=>x.toLowerCase().startsWith(lq));
+      const ct=list.filter(x=>!x.toLowerCase().startsWith(lq)&&x.toLowerCase().includes(lq));
+      return [...sw,...ct].slice(0,30);
+    }
+    function highlight(text,q){
+      if(!q)return text;
+      const i=text.toLowerCase().indexOf(q.toLowerCase());
+      if(i<0)return text;
+      return text.slice(0,i)+'<mark>'+text.slice(i,i+q.length)+'</mark>'+text.slice(i+q.length);
+    }
+    function render(){
+      const q=inputEl.value.trim();
+      const opts=getOpts();
+      const filtered=matches(opts,q);
+      idx=-1;
+      if(!filtered.length&&!allowNew){drop.innerHTML='<div class="ac-empty">無符合選項</div>';drop.style.display='block';return;}
+      let html=filtered.map((o,i)=>`<div class="ac-item" data-val="${o}" data-i="${i}">${highlight(o,q)}</div>`).join('');
+      if(allowNew&&q&&!opts.includes(q)) html+=`<div class="ac-item ac-add" data-val="${q}" data-new="1">+ 新增「${q}」</div>`;
+      drop.innerHTML=html||'<div class="ac-empty">無符合選項</div>';
+      drop.style.display='block';
+      drop.querySelectorAll('.ac-item').forEach(el=>{
+        el.addEventListener('mousedown',e=>{e.preventDefault();select(el.dataset.val,el.dataset.new==='1');});
+      });
+    }
+    function select(val,isNew){
+      inputEl.value=val;drop.style.display='none';
+      if(isNew){registerBm(val);} // register if BM field
+      onSelect(val,isNew);
+    }
+    function hide(){setTimeout(()=>drop.style.display='none',150);}
+
+    inputEl.addEventListener('input',render);
+    inputEl.addEventListener('focus',render);
+    inputEl.addEventListener('blur',hide);
+    inputEl.addEventListener('keydown',e=>{
+      const items=drop.querySelectorAll('.ac-item');
+      if(e.key==='ArrowDown'){e.preventDefault();idx=Math.min(idx+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('focused',i===idx));}
+      else if(e.key==='ArrowUp'){e.preventDefault();idx=Math.max(idx-1,0);items.forEach((el,i)=>el.classList.toggle('focused',i===idx));}
+      else if(e.key==='Enter'&&idx>=0){e.preventDefault();const el=items[idx];if(el)select(el.dataset.val,el.dataset.new==='1');}
+      else if(e.key==='Escape'){drop.style.display='none';}
+    });
+  }
+};
+
+/* ── Tag / category engine ── */
+const TAG={
+  BUILTIN:[
+    {kws:['X0','B0','barcode','convert'],cat:'Convert Barcode'},
+    {kws:['fix','Fix','issue','problem','error'],cat:'Fix listing'},
+    {kws:['CN','create new','new listing','新'],cat:'Create listing'},
+    {kws:['SY','sell yours'],cat:'Create Sell Yours'},
+    {kws:['LOA','loa','authorization'],cat:'LOA'},
+  ],
+  getRules(){
+    return[...this.BUILTIN,...(state.tagRules||[])];
+  },
+  detect(text){
+    if(!text)return[];
+    const suggested=new Set();
+    for(const rule of this.getRules()){
+      for(const kw of rule.kws){
+        if(text.toLowerCase().includes(kw.toLowerCase())){suggested.add(rule.cat);break;}
+      }
+    }
+    return[...suggested];
+  },
+  // also learn: if user always picks same cat for a keyword, remember it
+  learn(text,cat){
+    if(!state.tagRules)state.tagRules=[];
+    // extract 2-4 char tokens from text as potential keywords
+    const tokens=text.split(/[\s\-_,]+/).filter(t=>t.length>=2&&t.length<=8);
+    tokens.forEach(tok=>{
+      const existing=state.tagRules.find(r=>r.kws.includes(tok)&&r.cat===cat);
+      if(!existing&&!TAG.BUILTIN.some(b=>b.kws.includes(tok))){
+        state.tagRules.push({kws:[tok],cat,learned:true});
+      }
+    });
+  }
+};
+
+/* ── Tag UI helpers ── */
+let _activeTag=null;
+
+function renderTagSuggestions(inputId, tagAreaId, catSelectId){
+  const text=document.getElementById(inputId)?.value||'';
+  const area=document.getElementById(tagAreaId);
+  const sel=document.getElementById(catSelectId);
+  if(!area)return;
+  const suggestions=TAG.detect(text);
+
+  // Auto-apply the first detected tag immediately
+  if(suggestions.length&&sel){
+    const best=suggestions[0];
+    // find or add option
+    let opt=[...sel.options].find(o=>o.value===best||o.text===best);
+    if(!opt){opt=new Option(best,best);sel.add(opt);}
+    sel.value=best;
+    _activeTag=best;
+  }
+
+  // Show all detected suggestions as chips so user can switch
+  if(!suggestions.length){area.innerHTML='';return;}
+  area.innerHTML=suggestions.map(cat=>`
+    <button type="button" class="tag-suggest${_activeTag===cat?' active-tag':''}"
+      onclick="applyTag('${catSelectId}','${cat}','${tagAreaId}')">
+      #<span class="ts-label">${cat}</span>
+    </button>`).join('');
+}
+
+function applyTag(catSelectId, cat, tagAreaId){
+  _activeTag=cat;
+  const sel=document.getElementById(catSelectId);
+  if(sel){
+    let opt=[...sel.options].find(o=>o.value===cat||o.text===cat);
+    if(!opt){opt=new Option(cat,cat);sel.add(opt);}
+    sel.value=cat;
+  }
+  // re-render chips to update active state
+  const area=document.getElementById(tagAreaId);
+  if(area){
+    area.querySelectorAll('.tag-suggest').forEach(b=>{
+      b.classList.toggle('active-tag', b.querySelector('.ts-label').textContent===cat);
+    });
+  }
+}
+
+/* ── Rule manager UI ── */
+function renderRuleManager(containerId){
+  const c=document.getElementById(containerId);if(!c)return;
+  const rules=(state.tagRules||[]);
+  const allCats=['Convert Barcode','Fix listing','Create listing','Create Sell Yours','LOA','問題排查','其他'];
+  c.innerHTML=`
+    <div class="rule-list" id="rule-list-inner">
+      ${rules.length?rules.map((r,i)=>`
+        <div class="rule-row">
+          <input value="${r.kws.join(',')}" placeholder="keyword(s)" onchange="updateRule(${i},'kws',this.value)">
+          <select onchange="updateRule(${i},'cat',this.value)">
+            ${allCats.map(c=>`<option ${r.cat===c?'selected':''}>${c}</option>`).join('')}
+            ${!allCats.includes(r.cat)?`<option selected>${r.cat}</option>`:''}
+          </select>
+          <button class="rule-del" onclick="deleteRule(${i})">×</button>
+        </div>`).join('')
+      :'<div style="font-size:11px;color:var(--tx2);padding:4px 0">尚無自訂規則</div>'}
+    </div>
+    <button class="slist-add-btn" style="margin-top:6px" onclick="addRule('${containerId}')">+ 新增規則</button>`;
+}
+
+function updateRule(i,field,val){
+  if(!state.tagRules)state.tagRules=[];
+  if(field==='kws')state.tagRules[i].kws=val.split(',').map(x=>x.trim()).filter(Boolean);
+  else state.tagRules[i][field]=val;
+  saveDay();
+}
+function deleteRule(i){state.tagRules.splice(i,1);save();}
+function addRule(containerId){
+  if(!state.tagRules)state.tagRules=[];
+  state.tagRules.push({kws:[''],cat:'其他',learned:false});
+  renderRuleManager(containerId);
+  saveDay();
+}
+
+/* ── BM/Vendor wiring ── */
+function registerBm(bm){if(bm&&!state.bms.includes(bm))state.bms.push(bm);}
+function getVendors(bm){
+  const t=bm.trim();
+  if(t&&state.mapping[t])return state.mapping[t];
+  return[...new Set(Object.values(state.mapping).flat())];
+}
+
+// Called after form renders to wire up AC
+function wireFormAC(){
+  const bmEl=document.getElementById('task-bm');
+  const vEl=document.getElementById('task-vendor');
+  if(!bmEl||!vEl)return;
+  AC.init(bmEl,'form-bm-drop',()=>state.bms,(val)=>{
+    registerBm(val);
+    // update vendor options
+    const vDrop=document.getElementById('form-vendor-drop');
+    if(vDrop)vDrop.style.display='none';
+    vEl.value='';
+  },true);
+  AC.init(vEl,'form-vendor-drop',()=>getVendors(bmEl.value||''),()=>{},true);
+}
+function wireEditAC(){
+  const bmEl=document.getElementById('edit-bm');
+  const vEl=document.getElementById('edit-vendor');
+  if(!bmEl||!vEl)return;
+  AC.init(bmEl,'edit-bm-drop',()=>state.bms,(val)=>{
+    registerBm(val);vEl.value='';
+  },true);
+  AC.init(vEl,'edit-vendor-drop',()=>getVendors(bmEl.value||''),()=>{},true);
+}
+
+/* ── Period UI helpers ── */
+function onEditRecurringChange(){
+  const checked=document.getElementById('edit-recurring').checked;
+  document.getElementById('edit-rec-wrap').style.display=checked?'block':'none';
+  if(checked)onEditPeriodChange();
+}
+function onEditPeriodChange(){
+  const p=document.getElementById('edit-rec-period')?.value||'weekly';
+  document.getElementById('edit-rec-weekly').style.display=p==='weekly'?'block':'none';
+  document.getElementById('edit-rec-monthly').style.display=p==='monthly'?'block':'none';
+}
+function getEditPeriodValue(){
+  const p=document.getElementById('edit-rec-period')?.value||'weekly';
+  if(p==='weekly'){
+    const cbs=document.querySelectorAll('.edit-dow-cb:checked');
+    return [...cbs].map(cb=>parseInt(cb.value));
+  }
+  if(p==='monthly') return document.getElementById('edit-rec-monthday')?.value||'1';
+  return null;
+}
+function setEditPeriodFields(period,periodValue){
+  const recChk=document.getElementById('edit-recurring');
+  if(!recChk)return;
+  const hasPeriod=period&&period!=='none';
+  recChk.checked=hasPeriod;
+  document.getElementById('edit-rec-wrap').style.display=hasPeriod?'block':'none';
+  if(!hasPeriod)return;
+  const pSel=document.getElementById('edit-rec-period');
+  if(pSel)pSel.value=period;
+  onEditPeriodChange();
+  if(period==='weekly'&&Array.isArray(periodValue)){
+    document.querySelectorAll('.edit-dow-cb').forEach(cb=>{
+      cb.checked=periodValue.includes(parseInt(cb.value));
+    });
+  }
+  if(period==='monthly'){
+    const md=document.getElementById('edit-rec-monthday');
+    if(md)md.value=periodValue||'1';
+  }
+}
+
+function onFormRecurringChange(){
+  const checked=document.getElementById('task-recurring').checked;
+  document.getElementById('task-rec-wrap').style.display=checked?'block':'none';
+  if(checked)onFormPeriodChange();
+}
+function onFormPeriodChange(){
+  const p=document.getElementById('task-rec-period')?.value||'weekly';
+  document.getElementById('task-rec-weekly').style.display=p==='weekly'?'block':'none';
+  document.getElementById('task-rec-monthly').style.display=p==='monthly'?'block':'none';
+}
+function getFormPeriodValue(){
+  const p=document.getElementById('task-rec-period')?.value||'weekly';
+  if(p==='weekly'){
+    const cbs=document.querySelectorAll('.task-dow-cb:checked');
+    return [...cbs].map(cb=>parseInt(cb.value));
+  }
+  if(p==='monthly') return document.getElementById('task-rec-monthday')?.value||'1';
+  return null;
+}
+
+/* ── Recurring (legacy strip) ── */
+function toggleRecActive(id){const r=state.recurring.find(x=>x.id===id);if(r){r.active=!r.active;save();}}
+function deleteRec(id){state.recurring=state.recurring.filter(x=>x.id!==id);save();}
+
+/* ── Status change inline ── */
+function changeStatus(wsId,taskId,status){
+  const ws=state.workspaces.find(w=>w.id===wsId);
+  const t=ws?.tasks.find(x=>x.id===taskId);
+  if(t){
+    t.status=status;
+    if(status==='trash')t.trashedOn=new Date().toISOString().slice(0,10);
+    else delete t.trashedOn;
+    save();
+  }
+}
+function togglePin(wsId,taskId){
+  const ws=state.workspaces.find(w=>w.id===wsId);
+  const t=ws?.tasks.find(x=>x.id===taskId);if(t){t.pinned=!t.pinned;save();}
+}
+
+/* ── Add Task ── */
+function addTask(wsId){
+  const ws=state.workspaces.find(w=>w.id===wsId);
+  const desc=document.getElementById('task-desc').value.trim();if(!desc)return;
+  let link=document.getElementById('task-link').value.trim();
+  if(link&&!link.startsWith('http'))link='https://'+link;
+  const bm=document.getElementById('task-bm').value.trim();
+  registerBm(bm);
+  const isRec=document.getElementById('task-recurring')?.checked||false;
+  if(isRec){
+    state.recurring.push({id:'rec'+Date.now(),desc,freq:document.getElementById('task-rec-freq')?.value||'weekly',active:true});
+  } else {
+    // inline paste items
+    const items=window._inlineItems||[];
+    const hasPeriod=document.getElementById('task-recurring')?.checked||false;
+    const period=hasPeriod?(document.getElementById('task-rec-period')?.value||'weekly'):'none';
+    const periodValue=hasPeriod?getFormPeriodValue():null;
+    ws.tasks.push({id:Date.now(),desc,cat:document.getElementById('task-cat').value,
+      bm,vendor:document.getElementById('task-vendor').value.trim(),
+      asin:document.getElementById('task-asin')?.value.trim()||'',
+      sku:document.getElementById('task-sku')?.value.trim()||'',
+      link,status:'todo',pinned:false,items,period,periodValue});
+    TAG.learn(desc, document.getElementById('task-cat').value);
+    window._inlineItems=[];
+    const il=document.getElementById('inline-item-count');if(il)il.textContent='';
+  }
+  ['task-desc','task-bm','task-vendor','task-asin','task-sku','task-link'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const rc=document.getElementById('task-recurring');if(rc)rc.checked=false;
+  save();
+}
+
+/* ── Edit Modal ── */
+function openEditModal(wsId,taskId){
+  const ws=state.workspaces.find(w=>w.id===wsId);
+  const t=ws?.tasks.find(x=>x.id===taskId);
+  editTarget={wsId,taskId};_activeTag=null;
+  document.getElementById('modal-title').textContent=t?'Edit Task':'New Task';
+  document.getElementById('edit-desc').value=t?.desc||'';
+  document.getElementById('edit-cat').value=t?.cat||'Create listing';
+  document.getElementById('edit-status').value=t?.status||'todo';
+  document.getElementById('edit-status').style.display=t?'':'none';
+  document.getElementById('edit-bm').value=t?.bm||'';
+  document.getElementById('edit-vendor').value=t?.vendor||'';
+  document.getElementById('edit-asin').value=t?.asin||'';
+  document.getElementById('edit-sku').value=t?.sku||'';
+  document.getElementById('edit-link').value=t?.link||'';
+  document.getElementById('edit-pinned').checked=t?.pinned||false;
+  document.getElementById('edit-recurring').checked=false;
+  document.getElementById('edit-rec-wrap').style.display='none';
+  document.getElementById('edit-tag-area').innerHTML='';
+  // set period fields
+  setEditPeriodFields(t?.period||'none', t?.periodValue||null);
+  document.getElementById('edit-modal').style.display='flex';
+  setTimeout(()=>{ wireEditAC(); if(t?.desc)renderTagSuggestions('edit-desc','edit-tag-area','edit-cat'); },10);
+}
+function openNewTaskModal(wsId){
+  const ws=state.workspaces.find(w=>w.id===wsId);
+  editTarget={wsId,taskId:null};_activeTag=null;
+  document.getElementById('modal-title').textContent='New Task — '+(ws?.name||'');
+  ['edit-desc','edit-bm','edit-vendor','edit-asin','edit-sku','edit-link'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('edit-cat').value='Create listing';
+  document.getElementById('edit-status').style.display='none';
+  document.getElementById('edit-pinned').checked=false;
+  document.getElementById('edit-recurring').checked=false;
+  document.getElementById('edit-rec-wrap').style.display='none';
+  document.getElementById('edit-tag-area').innerHTML='';
+  document.getElementById('edit-modal').style.display='flex';
+  setTimeout(()=>wireEditAC(),10);
+}
+function saveEdit(){
+  if(!editTarget)return;
+  const{wsId,taskId}=editTarget;
+  const ws=state.workspaces.find(w=>w.id===wsId);if(!ws)return;
+  const desc=document.getElementById('edit-desc').value.trim();if(!desc){alert('請輸入任務描述');return;}
+  let link=document.getElementById('edit-link').value.trim();
+  if(link&&!link.startsWith('http'))link='https://'+link;
+  const bm=document.getElementById('edit-bm').value.trim();registerBm(bm);
+  const isRec=document.getElementById('edit-recurring').checked;
+  if(isRec&&!taskId){
+    state.recurring.push({id:'rec'+Date.now(),desc,freq:document.getElementById('edit-rec-freq').value,active:true});
+  } else if(taskId){
+    const t=ws.tasks.find(x=>x.id===taskId);
+    if(t){t.desc=desc;t.cat=document.getElementById('edit-cat').value;t.status=document.getElementById('edit-status').value;
+      t.bm=bm;t.vendor=document.getElementById('edit-vendor').value.trim();
+      t.asin=document.getElementById('edit-asin').value.trim();t.sku=document.getElementById('edit-sku').value.trim();
+      t.link=link;t.pinned=document.getElementById('edit-pinned').checked;
+      const hasPeriod=document.getElementById('edit-recurring').checked;
+      t.period=hasPeriod?(document.getElementById('edit-rec-period')?.value||'weekly'):'none';
+      t.periodValue=hasPeriod?getEditPeriodValue():null;}
+  } else {
+    const hasPeriod=document.getElementById('edit-recurring').checked;
+    ws.tasks.push({id:Date.now(),desc,cat:document.getElementById('edit-cat').value,
+      bm,vendor:document.getElementById('edit-vendor').value.trim(),
+      asin:document.getElementById('edit-asin').value.trim(),sku:document.getElementById('edit-sku').value.trim(),
+      link,status:'todo',pinned:document.getElementById('edit-pinned').checked,items:[],
+      period:hasPeriod?(document.getElementById('edit-rec-period')?.value||'weekly'):'none',
+      periodValue:hasPeriod?getEditPeriodValue():null});
+  }
+  closeEditModal();
+  // learn tag association
+  TAG.learn(desc, document.getElementById('edit-cat')?.value||'');
+  save();
+}
+function closeEditModal(){document.getElementById('edit-modal').style.display='none';editTarget=null;}
+
+/* ── Shipment List ── */
+// Default columns — only SKU/FNSKU and Barcode/ASIN kept; others removed
+const SLIST_DEFAULT_COLS=[
+  {key:'sku',  label:'SKU / FNSKU', rx:/^sku$|fnsku|merchant.?sku|item.?sku|seller.?sku/i, w:''},
+  {key:'barcode',label:'Barcode / ASIN',rx:/barcode|^asin$|^upc$|^ean$|^gtin$/i, w:''},
+];
+
+// state.slistCols = [{key, label, w?}]  — persisted per-session
+function getSlistCols(){
+  return state.slistCols && state.slistCols.length ? state.slistCols : JSON.parse(JSON.stringify(SLIST_DEFAULT_COLS));
+}
+
+function detectCols(headers){
+  const cols=getSlistCols();
+  const map={};
+  headers.forEach((h,i)=>{
+    const c=h.trim();
+    cols.forEach(col=>{
+      if(col.rx && col.rx.test(c) && map[col.key]===undefined) map[col.key]=i;
+    });
+    // also try exact label match for custom cols
+    cols.forEach(col=>{
+      if(!col.rx && col.label.toLowerCase()===c.toLowerCase() && map[col.key]===undefined) map[col.key]=i;
+    });
+  });
+  return map;
+}
+
+function parseRawText(raw){
+  const lines=raw.split(/\r?\n/).filter(l=>l.trim());if(!lines.length)return{rows:[],msg:''};
+  const firstHasTab=lines[0].includes('\t');
+  const delim=firstHasTab?'\t':',';
+  const split=l=>{
+    if(delim==='\t')return l.split('\t').map(c=>c.trim());
+    const res=[];let cur='',inQ=false;
+    for(const ch of l){if(ch==='"'){inQ=!inQ;}else if(ch===','&&!inQ){res.push(cur.trim());cur='';}else cur+=ch;}
+    res.push(cur.trim());return res;
+  };
+  const rows=lines.map(l=>split(l).map(c=>c.replace(/^"|"$/g,'')));
+  const cols=getSlistCols();
+  let colMap={},dataRows=rows,hasHeader=false;
+
+  // check if first row looks like a header
+  const allRx=cols.filter(c=>c.rx).map(c=>c.rx);
+  const matchCount=allRx.filter(rx=>rows[0].some(c=>rx.test(c.trim()))).length;
+  if(matchCount>=1){colMap=detectCols(rows[0]);dataRows=rows.slice(1);hasHeader=true;}
+  else{cols.forEach((c,i)=>{colMap[c.key]=i;});}
+
+  const parsed=dataRows.filter(r=>r.some(c=>c.trim())).map(r=>{
+    const obj={};
+    cols.forEach(c=>{obj[c.key]=colMap[c.key]!==undefined?(r[colMap[c.key]]||''):'';});
+    return obj;
+  });
+  const detected=Object.keys(colMap).map(k=>cols.find(c=>c.key===k)?.label).filter(Boolean);
+  const msg=`✓ 匯入 ${parsed.length} 筆`+(hasHeader?`，偵測欄位：${detected.join('、')}`:'，按欄位順序填入');
+  return{rows:parsed,msg};
+}
+
+function esc(v){return String(v||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+
+function renderSlistHeader(){
+  const cols=getSlistCols();
+  const thead=document.getElementById('slist-thead');if(!thead)return;
+  thead.innerHTML='<tr>'
+    +'<th style="width:24px">#</th>'
+    +cols.map((col,ci)=>`
+      <th>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <span>${col.label}</span>
+          <span style="display:flex;gap:2px;flex-shrink:0;">
+            ${ci>0?`<button class="slist-col-btn" title="左移" onclick="slistMoveCol(${ci},-1)">←</button>`:''}
+            ${ci<cols.length-1?`<button class="slist-col-btn" title="右移" onclick="slistMoveCol(${ci},1)">→</button>`:''}
+            <button class="slist-col-btn" style="color:var(--red)" title="刪除欄" onclick="slistDelCol(${ci})">×</button>
+          </span>
+        </div>
+      </th>`).join('')
+    +'<th style="width:60px"><button class="slist-col-btn" style="color:var(--grn);font-size:12px;padding:2px 6px" onclick="slistAddCol()">+欄</button></th>'
+    +'</tr>';
+}
+
+function renderSlistBody(rows){
+  const cols=getSlistCols();
+  const body=document.getElementById('slist-body');
+  const lbl=document.getElementById('slist-count-label');
+  if(lbl)lbl.textContent=`清單（共 ${rows.length} 筆）`;
+  if(!body)return;
+  body.innerHTML=rows.map((r,i)=>`
+    <tr>
+      <td style="color:var(--tx2);font-size:11px;text-align:center;width:24px">${i+1}</td>
+      ${cols.map(col=>`<td><input value="${esc(r[col.key]||'')}" oninput="_slistRows[${i}]['${col.key}']=this.value" placeholder="${col.label}"></td>`).join('')}
+      <td><button class="slist-del" onclick="_slistRows.splice(${i},1);renderSlistBody(_slistRows)">×</button></td>
+    </tr>`).join('');
+}
+
+function slistMoveCol(ci, dir){
+  const cols=getSlistCols();
+  const ni=ci+dir;if(ni<0||ni>=cols.length)return;
+  [cols[ci],cols[ni]]=[cols[ni],cols[ci]];
+  state.slistCols=cols;
+  // reorder data in rows too
+  _slistRows.forEach(r=>{});  // keys are named so no reorder needed
+  saveDay();
+  renderSlistHeader();renderSlistBody(_slistRows);
+}
+
+function slistDelCol(ci){
+  const cols=getSlistCols();
+  if(cols.length<=1){alert('至少保留一欄');return;}
+  const key=cols[ci].key;
+  cols.splice(ci,1);
+  state.slistCols=cols;
+  _slistRows.forEach(r=>delete r[key]);
+  saveDay();
+  renderSlistHeader();renderSlistBody(_slistRows);
+}
+
+function slistAddCol(){
+  const label=prompt('新欄位名稱：');if(!label)return;
+  const cols=getSlistCols();
+  const key='custom_'+Date.now();
+  cols.push({key,label,rx:null});
+  state.slistCols=cols;
+  _slistRows.forEach(r=>r[key]='');
+  saveDay();
+  renderSlistHeader();renderSlistBody(_slistRows);
+}
+
+function slistAddRow(){
+  const cols=getSlistCols();
+  const empty={};cols.forEach(c=>empty[c.key]='');
+  _slistRows.push(empty);renderSlistBody(_slistRows);
+}
+
+function parsePaste(){
+  const raw=document.getElementById('slist-paste-area').value.trim();
+  if(!raw){alert('請先貼上清單');return;}
+  const{rows,msg}=parseRawText(raw);
+  _slistRows=[..._slistRows,...rows];
+  renderSlistBody(_slistRows);
+  const info=document.getElementById('slist-parse-info');
+  info.style.display='block';info.textContent=msg;
+  document.getElementById('slist-paste-area').value='';
+  setTimeout(()=>info.style.display='none',5000);
+}
+
+function openSlistModal(wsId,taskId){
+  slistTarget={wsId,taskId};
+  const ws=state.workspaces.find(w=>w.id===wsId);
+  const t=ws?.tasks.find(x=>x.id===taskId);
+  document.getElementById('slist-task-desc').textContent=t?'任務：'+t.desc:'';
+  document.getElementById('slist-paste-area').value='';
+  document.getElementById('slist-parse-info').style.display='none';
+  _slistRows=JSON.parse(JSON.stringify(t?.items||[]));
+  renderSlistHeader();
+  renderSlistBody(_slistRows);
+  document.getElementById('slist-modal').style.display='flex';
+}
+function saveSlist(){
+  if(!slistTarget)return;
+  const ws=state.workspaces.find(w=>w.id===slistTarget.wsId);
+  const t=ws?.tasks.find(x=>x.id===slistTarget.taskId);
+  const cols=getSlistCols();
+  if(t){t.items=_slistRows.filter(r=>cols.some(c=>r[c.key]));save();}
+  closeSlistModal();
+}
+function closeSlistModal(){document.getElementById('slist-modal').style.display='none';slistTarget=null;_slistRows=[];}
+
+function slistCopyAll(){
+  const cols=getSlistCols();
+  const hdr=['#',...cols.map(c=>c.label)];
+  const rows=_slistRows.map((r,i)=>[i+1,...cols.map(c=>r[c.key]||'')]);
+  const txt=[hdr,...rows].map(r=>r.join('\t')).join('\n');
+  navigator.clipboard.writeText(txt).then(()=>alert('已複製！可貼至 Excel / Teams'));
+}
+function slistExport(){
+  const cols=getSlistCols();
+  const hdr=['#',...cols.map(c=>c.label)];
+  const rows=_slistRows.map((r,i)=>[i+1,...cols.map(c=>r[c.key]||'')]);
+  const csv=[hdr,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download='shipment_list.csv';a.click();
+}
+
+/* inline paste in new task form */
+function parseInlinePaste(){
+  const raw=document.getElementById('inline-paste-area').value.trim();
+  if(!raw)return;
+  const{rows,msg}=parseRawText(raw);
+  window._inlineItems=rows;
+  const lbl=document.getElementById('inline-item-count');
+  if(lbl)lbl.textContent=`✓ ${rows.length} 筆已暫存`;
+  document.getElementById('inline-paste-area').value='';
+}
+
+/* ── Vendor Relations ── */
+let vrSort={col:'vendor',asc:true};
+let vrFilter='all';
+
+function openVrModal(id){
+  vrEditId=id||null;
+  const r=id?state.vendorRelations.find(x=>x.id===id):null;
+  document.getElementById('vr-modal-title').textContent=r?'Edit Relation':'New Relation';
+  document.getElementById('vr-vendor').value=r?.vendor||'';
+  document.getElementById('vr-brand').value=r?.brand||'';
+  document.getElementById('vr-source').value=r?.source||'Admin';
+  document.getElementById('vr-result').value=r?.result||'Under Review';
+  document.getElementById('vr-remark').value=r?.remark||'';
+  document.getElementById('vr-name').value=r?.name||'';
+  // populate vendor datalist from existing relations
+  const vl=document.getElementById('vr-vendor-list');
+  const uv=[...new Set(state.vendorRelations.map(x=>x.vendor).filter(Boolean))];
+  vl.innerHTML=uv.map(v=>`<option value="${v}">`).join('');
+  document.getElementById('vr-modal').style.display='flex';
+}
+function saveVr(){
+  const vendor=document.getElementById('vr-vendor').value.trim();
+  const brand=document.getElementById('vr-brand').value.trim();
+  if(!vendor&&!brand){alert('請至少填入 Vendor 或 Brand');return;}
+  const obj={id:vrEditId||'vr'+Date.now(),vendor,brand,
+    source:document.getElementById('vr-source').value,
+    result:document.getElementById('vr-result').value,
+    remark:document.getElementById('vr-remark').value.trim(),
+    name:document.getElementById('vr-name').value.trim(),
+    ts:new Date().toISOString()};
+  if(vrEditId){const i=state.vendorRelations.findIndex(x=>x.id===vrEditId);if(i>=0)state.vendorRelations[i]=obj;}
+  else state.vendorRelations.push(obj);
+  closeVrModal();save();
+}
+function deleteVr(id){if(confirm('確定刪除？')){state.vendorRelations=state.vendorRelations.filter(x=>x.id!==id);save();}}
+function closeVrModal(){document.getElementById('vr-modal').style.display='none';vrEditId=null;}
+
+function vrSortBy(col){
+  if(vrSort.col===col)vrSort.asc=!vrSort.asc;else{vrSort.col=col;vrSort.asc=true;}
+  renderVendorView(document.getElementById('content-area'));
+}
+
+function resultClass(r){
+  if(!r)return'rp-none';
+  if(r==='Approved')return'rp-approved';
+  if(r==='Denied')return'rp-denied';
+  return'rp-review';
+}
+
+function exportVrCsv(){
+  const hdr=['Vendor','Brand','Source','Result','Remark','Name'];
+  const rows=state.vendorRelations.map(r=>[r.vendor,r.brand,r.source,r.result,r.remark,r.name]);
+  const csv=[hdr,...rows].map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download='vendor_relations.csv';a.click();
+}
+
+function renderVendorView(area){
+  const q=(document.getElementById('global-search')?.value||'').toLowerCase();
+  const counts={all:0,Approved:0,'Under Review':0,Denied:0};
+  state.vendorRelations.forEach(r=>{counts.all++;const k=r.result||'';if(counts[k]!==undefined)counts[k]++;});
+
+  let data=[...state.vendorRelations];
+  if(vrFilter!=='all')data=data.filter(r=>r.result===vrFilter);
+  if(q)data=data.filter(r=>(r.vendor+r.brand+r.remark+r.name).toLowerCase().includes(q));
+  data.sort((a,b)=>{
+    const av=String(a[vrSort.col]||'').toLowerCase();
+    const bv=String(b[vrSort.col]||'').toLowerCase();
+    return vrSort.asc?av.localeCompare(bv):bv.localeCompare(av);
+  });
+
+  const arrow=col=>vrSort.col===col?(vrSort.asc?' ↑':' ↓'):'';
+
+  area.innerHTML=`
+    <div class="vr-view">
+      <div class="vr-stats">
+        <div class="vr-stat">全部 <span>${counts.all}</span></div>
+        <div class="vr-stat">✅ Approved <span style="color:var(--grn)">${counts['Approved']}</span></div>
+        <div class="vr-stat">🕐 Under Review <span style="color:var(--amb)">${counts['Under Review']}</span></div>
+        <div class="vr-stat">❌ Denied <span style="color:var(--red)">${counts['Denied']}</span></div>
+      </div>
+      <div class="vr-controls">
+        <div class="vr-filter-row">
+          <button class="vr-filter ${vrFilter==='all'?'active':''}" onclick="vrFilter='all';renderVendorView(document.getElementById('content-area'))">全部</button>
+          <button class="vr-filter ${vrFilter==='Approved'?'active':''}" onclick="vrFilter='Approved';renderVendorView(document.getElementById('content-area'))">Approved</button>
+          <button class="vr-filter ${vrFilter==='Under Review'?'active':''}" onclick="vrFilter='Under Review';renderVendorView(document.getElementById('content-area'))">Under Review</button>
+          <button class="vr-filter ${vrFilter==='Denied'?'active':''}" onclick="vrFilter='Denied';renderVendorView(document.getElementById('content-area'))">Denied</button>
+        </div>
+        <button class="modal-btn primary" style="padding:5px 14px;font-size:12px;" onclick="openVrModal(null)">+ New</button>
+        <button class="modal-btn" style="padding:5px 14px;font-size:12px;" onclick="triggerVrImport()">📥 批量匯入</button>
+        <button class="modal-btn grn" style="padding:5px 14px;font-size:12px;" onclick="exportVrCsv()">⬇ CSV</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="vr-tbl">
+          <thead>
+            <tr>
+              <th onclick="vrSortBy('vendor')">Vendor / Distributor${arrow('vendor')}</th>
+              <th onclick="vrSortBy('brand')">Brand${arrow('brand')}</th>
+              <th onclick="vrSortBy('source')">Source${arrow('source')}</th>
+              <th onclick="vrSortBy('result')">Result${arrow('result')}</th>
+              <th onclick="vrSortBy('remark')">Remark</th>
+              <th onclick="vrSortBy('name')">Name${arrow('name')}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.length?data.map(r=>`
+              <tr onclick="openVrModal('${r.id}')">
+                <td>${esc(r.vendor)}</td>
+                <td>${esc(r.brand)}</td>
+                <td style="color:var(--tx2)">${esc(r.source)}</td>
+                <td><span class="result-pill ${resultClass(r.result)}">${r.result||'—'}</span></td>
+                <td style="color:var(--tx2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(r.remark)}</td>
+                <td style="color:var(--tx2)">${esc(r.name)}</td>
+                <td onclick="event.stopPropagation()"><button class="tbl-del" onclick="deleteVr('${r.id}')">×</button></td>
+              </tr>`).join('')
+            :'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--tx2)">尚無資料，點「+ New」新增</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+/* ── BM Mapping view ── */
+function openMapModal(bm){
+  mapEditBm=bm||null;
+  document.getElementById('map-modal-title').textContent=bm?'Edit Mapping':'New BM Mapping';
+  document.getElementById('map-bm').value=bm||'';
+  document.getElementById('map-bm').readOnly=!!bm;
+  document.getElementById('map-vendors').value=bm?(state.mapping[bm]||[]).join(', '):'';
+  document.getElementById('map-modal').style.display='flex';
+}
+function closeMapModal(){document.getElementById('map-modal').style.display='none';mapEditBm=null;}
+function saveMapping(){
+  const bm=document.getElementById('map-bm').value.trim();if(!bm)return;
+  const vendors=document.getElementById('map-vendors').value.split(',').map(v=>v.trim()).filter(Boolean);
+  if(mapEditBm&&mapEditBm!==bm){delete state.mapping[mapEditBm];state.bms=state.bms.filter(x=>x!==mapEditBm);}
+  state.mapping[bm]=vendors;
+  if(!state.bms.includes(bm))state.bms.push(bm);
+  closeMapModal();save();
+}
+function deleteMapping(bm){if(!confirm('確定刪除 '+bm+'？'))return;delete state.mapping[bm];state.bms=state.bms.filter(x=>x!==bm);save();}
+
+function renderMappingView(area){
+  const allVendors=[...new Set(Object.values(state.mapping).flat())];
+  area.innerHTML=`
+    <div style="max-width:700px;">
+      <div class="stats-bar">
+        <div class="stat-chip"><div class="s-val">${state.bms.length}</div><div class="s-lbl">BM 總數</div></div>
+        <div class="stat-chip"><div class="s-val">${allVendors.length}</div><div class="s-lbl">Vendor 總數</div></div>
+      </div>
+      <div style="margin-bottom:12px;"><button class="btn-primary" style="width:auto;padding:7px 16px;" onclick="openMapModal(null)">+ New BM / Vendor</button></div>
+      <table class="vr-tbl">
+        <thead><tr><th>BM Name</th><th>Vendor(s)</th><th></th></tr></thead>
+        <tbody>${state.bms.map(bm=>`
+          <tr>
+            <td>${esc(bm)}</td>
+            <td style="color:var(--tx2)">${(state.mapping[bm]||[]).join(', ')||'—'}</td>
+            <td><button class="tbl-edit" onclick="openMapModal('${esc(bm)}')">Edit</button><button class="tbl-del" style="margin-left:8px" onclick="deleteMapping('${esc(bm)}')">×</button></td>
+          </tr>`).join('')||'<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--tx2)">尚無資料</td></tr>'}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+/* ── No-Convert List ── */
+function getNcList(){
+  if(!state.noConvert)state.noConvert={asins:[],vendors:[]};
+  return state.noConvert;
+}
+
+function ncCheckAsin(asin){
+  if(!asin)return null;
+  const a=asin.trim().toUpperCase();
+  return getNcList().asins.find(x=>x.value.toUpperCase()===a)||null;
+}
+function ncCheckVendor(vendor){
+  if(!vendor)return null;
+  const v=vendor.trim().toLowerCase();
+  return getNcList().vendors.find(x=>x.value.toLowerCase()===v)||null;
+}
+
+function parsePasteNc(raw){
+  // supports: one per line, comma-sep, tab-sep, space-sep for ASINs
+  return raw.split(/[\n\r,\t]+/)
+    .map(x=>x.trim())
+    .filter(x=>x.length>0);
+}
+
+function ncBulkAddAsins(){
+  const raw=document.getElementById('nc-asin-paste').value.trim();
+  if(!raw)return;
+  const vals=parsePasteNc(raw);
+  const list=getNcList();
+  let added=0;
+  vals.forEach(v=>{
+    const up=v.toUpperCase();
+    if(!list.asins.find(x=>x.value.toUpperCase()===up)){
+      list.asins.push({value:up,note:'',addedOn:new Date().toISOString().slice(0,10)});
+      added++;
+    }
+  });
+  document.getElementById('nc-asin-paste').value='';
+  save();
+  const info=document.getElementById('nc-asin-info');
+  if(info){info.textContent=`✓ 新增 ${added} 筆（已存在的跳過）`;setTimeout(()=>info.textContent='',4000);}
+}
+
+function ncBulkAddVendors(){
+  const raw=document.getElementById('nc-vendor-paste').value.trim();
+  if(!raw)return;
+  const vals=raw.split(/[\n\r]+/).map(x=>x.trim()).filter(Boolean);
+  const list=getNcList();
+  let added=0;
+  vals.forEach(v=>{
+    if(!list.vendors.find(x=>x.value.toLowerCase()===v.toLowerCase())){
+      list.vendors.push({value:v,note:'',addedOn:new Date().toISOString().slice(0,10)});
+      added++;
+    }
+  });
+  document.getElementById('nc-vendor-paste').value='';
+  save();
+  const info=document.getElementById('nc-vendor-info');
+  if(info){info.textContent=`✓ 新增 ${added} 筆（已存在的跳過）`;setTimeout(()=>info.textContent='',4000);}
+}
+
+function ncDeleteAsin(idx){getNcList().asins.splice(idx,1);save();}
+function ncDeleteVendor(idx){getNcList().vendors.splice(idx,1);save();}
+function ncUpdateNote(type,idx,val){
+  const list=getNcList();
+  if(type==='asin')list.asins[idx].note=val;
+  else list.vendors[idx].note=val;
+  saveDay();
+}
+
+function renderNoConvertView(area){
+  const list=getNcList();
+  const q=(document.getElementById('global-search')?.value||'').toLowerCase();
+
+  const filteredAsins=q?list.asins.filter(x=>x.value.toLowerCase().includes(q)||(x.note||'').toLowerCase().includes(q)):list.asins;
+  const filteredVendors=q?list.vendors.filter(x=>x.value.toLowerCase().includes(q)||(x.note||'').toLowerCase().includes(q)):list.vendors;
+
+  const asinRows=filteredAsins.map((x,i)=>`
+    <tr>
+      <td><span class="nc-badge">ASIN</span></td>
+      <td style="font-family:'Geist',monospace;font-size:12px;color:var(--tx)">${esc(x.value)}</td>
+      <td><input class="nc-note-input" value="${esc(x.note||'')}" placeholder="備註..." oninput="ncUpdateNote('asin',${i},this.value)"></td>
+      <td style="color:var(--tx2);font-size:11px">${x.addedOn||''}</td>
+      <td><button class="tbl-del" onclick="ncDeleteAsin(${i})">×</button></td>
+    </tr>`).join('');
+
+  const vendorRows=filteredVendors.map((x,i)=>`
+    <tr>
+      <td><span class="nc-badge" style="background:rgba(184,154,66,.15);color:var(--amb)">Vendor</span></td>
+      <td style="font-size:12px;color:var(--tx)">${esc(x.value)}</td>
+      <td><input class="nc-note-input" value="${esc(x.note||'')}" placeholder="備註..." oninput="ncUpdateNote('vendor',${i},this.value)"></td>
+      <td style="color:var(--tx2);font-size:11px">${x.addedOn||''}</td>
+      <td><button class="tbl-del" onclick="ncDeleteVendor(${i})">×</button></td>
+    </tr>`).join('');
+
+  area.innerHTML=`
+    <div style="max-width:800px;">
+      <div class="stats-bar">
+        <div class="stat-chip"><div class="s-val">${list.asins.length}</div><div class="s-lbl">No-Convert ASIN</div></div>
+        <div class="stat-chip"><div class="s-val">${list.vendors.length}</div><div class="s-lbl">No-Convert Vendor</div></div>
+      </div>
+
+      <div class="nc-section">
+        <div class="nc-section-title">🔒 ASIN 例外清單 <span class="nc-count">${list.asins.length} 筆</span></div>
+        <div style="font-size:11px;color:var(--tx2);margin-bottom:8px">每行一個 ASIN，或用逗號 / Tab 分隔，支援一次貼上多個</div>
+        <textarea id="nc-asin-paste" class="nc-paste-area" placeholder="B07R3MS8CX&#10;B0BV3DKRGL, B08N5WRWNW&#10;..."></textarea>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+          <button class="btn-primary" style="width:auto;padding:6px 16px" onclick="ncBulkAddAsins()">⚡ 匯入</button>
+          <span id="nc-asin-info" style="font-size:11px;color:var(--grn)"></span>
+        </div>
+        ${(filteredAsins.length||list.asins.length)?`
+        <table class="nc-table" style="margin-top:14px">
+          <thead><tr><th>類型</th><th>ASIN</th><th>備註</th><th>新增日期</th><th></th></tr></thead>
+          <tbody>${asinRows||'<tr><td colspan="5" style="text-align:center;color:var(--tx2);padding:12px">無符合結果</td></tr>'}</tbody>
+        </table>`:''}
+      </div>
+
+      <div class="nc-section">
+        <div class="nc-section-title">🚫 Vendor / Brand 例外清單 <span class="nc-count">${list.vendors.length} 筆</span></div>
+        <div style="font-size:11px;color:var(--tx2);margin-bottom:8px">每行一個廠商名稱（不區分大小寫），新增 task 時自動比對</div>
+        <textarea id="nc-vendor-paste" class="nc-paste-area" placeholder="Brand A&#10;Vendor XYZ&#10;..."></textarea>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+          <button class="btn-primary" style="width:auto;padding:6px 16px" onclick="ncBulkAddVendors()">⚡ 匯入</button>
+          <span id="nc-vendor-info" style="font-size:11px;color:var(--grn)"></span>
+        </div>
+        ${(filteredVendors.length||list.vendors.length)?`
+        <table class="nc-table" style="margin-top:14px">
+          <thead><tr><th>類型</th><th>Vendor / Brand</th><th>備註</th><th>新增日期</th><th></th></tr></thead>
+          <tbody>${vendorRows||'<tr><td colspan="5" style="text-align:center;color:var(--tx2);padding:12px">無符合結果</td></tr>'}</tbody>
+        </table>`:''}
+      </div>
+    </div>`;
+}
+
+/* NC real-time check for form inputs */
+function checkNcWarning(){
+  const asin=(document.getElementById('task-asin')?.value||'').trim();
+  const vendor=(document.getElementById('task-vendor')?.value||'').trim();
+  const desc=(document.getElementById('task-desc')?.value||'').trim();
+  const cat=(document.getElementById('task-cat')?.value||'');
+
+  // extract ASIN-like tokens from description too
+  const asinRx=/\bB[0-9A-Z]{9}\b/gi;
+  const descAsins=[...desc.matchAll(asinRx)].map(m=>m[0]);
+
+  const hits=[];
+  if(asin){const h=ncCheckAsin(asin);if(h)hits.push({type:'ASIN',value:asin,note:h.note});}
+  descAsins.forEach(a=>{const h=ncCheckAsin(a);if(h&&!hits.find(x=>x.value===a))hits.push({type:'ASIN',value:a,note:h.note});});
+  if(vendor){const h=ncCheckVendor(vendor);if(h)hits.push({type:'Vendor',value:vendor,note:h.note});}
+
+  const warn=document.getElementById('nc-form-warn');
+  if(!warn)return;
+  if(!hits.length){warn.style.display='none';return;}
+  warn.style.display='flex';
+  warn.innerHTML=`<span class="nc-warn-icon">🚫</span><div class="nc-warn-body"><div class="nc-warn-title">No-Convert 清單警告</div>
+    ${hits.map(h=>`<div>• ${h.type} <strong>${esc(h.value)}</strong>${h.note?' — '+esc(h.note):''} 不可 Convert Barcode</div>`).join('')}
+  </div>`;
+}
+
+/* ── Teams Message Parser ── */
+
+// Action detection rules — maps keywords found in message to task category
+const TEAMS_ACTION_RULES = [
+  { rx:/convert.{0,20}X0|X0.{0,20}convert|convert.{0,20}barcode|barcode.{0,20}convert/i, cat:'Convert Barcode', label:'Convert to X0' },
+  { rx:/fix\s+listing|listing.{0,10}fix|fix.{0,10}issue|incorrect|error|wrong|mismatch/i, cat:'Fix listing', label:'Fix Listing' },
+  { rx:/create\s+(new\s+)?listing|new\s+listing|set\s+up\s+listing|upload/i, cat:'Create listing', label:'Create Listing' },
+  { rx:/sell\s+yours|SY\b/i, cat:'Create Sell Yours', label:'Create Sell Yours' },
+  { rx:/LOA|letter\s+of\s+auth/i, cat:'LOA', label:'LOA' },
+  { rx:/convert.{0,20}B0|B0.{0,20}convert/i, cat:'Convert Barcode', label:'Convert to B0' },
+  { rx:/brand\s+enroll|enroll|labeling\s+req|excluded.{0,30}shipment/i, cat:'Convert Barcode', label:'Convert Barcode (Brand Enrollment)' },
+];
+
+// SKU pattern: alphanumeric segments joined by hyphens, min 2 segments, 5+ chars each group
+const SKU_RX = /\b([A-Z0-9]{2,}(?:-[A-Z0-9]{2,}){1,4})\b/g;
+
+let _teamsResult = null; // parsed result staging area
+
+function parseTeamsMessage(raw) {
+  if (!raw.trim()) return null;
+
+  // 1. Detect action
+  let detectedCat = '其他';
+  let detectedLabel = '未識別動作';
+  for (const rule of TEAMS_ACTION_RULES) {
+    if (rule.rx.test(raw)) { detectedCat = rule.cat; detectedLabel = rule.label; break; }
+  }
+
+  // 2. Extract SKUs — collect all matches, deduplicate
+  const rawMatches = [...raw.matchAll(SKU_RX)].map(m => m[1]);
+  // Filter out noise: must have at least one segment ≥ 3 chars and contain a digit or be all-caps word
+  const skus = [...new Set(rawMatches)].filter(s => {
+    const segs = s.split('-');
+    return segs.length >= 2 && segs.some(seg => seg.length >= 2);
+  });
+
+  // 3. Extract ASIN-like tokens (B0...)
+  const asinRx = /\bB[0-9A-Z]{9}\b/gi;
+  const asins = [...new Set([...raw.matchAll(asinRx)].map(m => m[0].toUpperCase()))];
+
+  // 4. Try to extract BM instruction sentence (lines after the SKU block)
+  const lines = raw.split(/\n/).map(l => l.trim()).filter(Boolean);
+  const instrLine = lines.find(l => /please|kindly|could|can you|help|hi\s|hello|team/i.test(l)) || '';
+
+  // 5. NC check on all extracted SKUs/ASINs
+  const ncHits = [
+    ...asins.map(a => { const h = ncCheckAsin(a); return h ? { value: a, type: 'ASIN' } : null; }),
+  ].filter(Boolean);
+
+  return { cat: detectedCat, label: detectedLabel, skus, asins, instrLine, ncHits, raw };
+}
+
+function teamsParseAndRender() {
+  const raw = document.getElementById('teams-raw')?.value || '';
+  _teamsResult = parseTeamsMessage(raw);
+  renderTeamsResult();
+}
+
+function renderTeamsResult() {
+  const box = document.getElementById('teams-result-area');
+  if (!box) return;
+  const r = _teamsResult;
+
+  if (!r) { box.innerHTML = ''; return; }
+  if (!r.skus.length && !r.asins.length) {
+    box.innerHTML = `<div class="teams-empty">⚠️ 沒有偵測到 SKU 或 ASIN，請確認格式是否正確</div>`;
+    return;
+  }
+
+  const catColor = { 'Convert Barcode':'rgba(184,154,66,.2)', 'Fix listing':'rgba(90,143,184,.2)', 'Create listing':'rgba(109,184,106,.2)', 'Create Sell Yours':'rgba(176,104,128,.2)', 'LOA':'rgba(160,160,160,.2)', '其他':'rgba(160,160,160,.15)' };
+  const catTextColor = { 'Convert Barcode':'var(--amb)', 'Fix listing':'var(--blue)', 'Create listing':'var(--grn)', 'Create Sell Yours':'var(--pin)', 'LOA':'var(--tx2)', '其他':'var(--tx2)' };
+
+  const skuChips = r.skus.map(s => `<span class="teams-sku-chip">${esc(s)}</span>`).join('');
+  const asinChips = r.asins.map(a => {
+    const hit = ncCheckAsin(a);
+    return `<span class="teams-sku-chip${hit ? ' nc-hit' : ''}" title="${hit ? '🚫 No-Convert: ' + (hit.note || '') : ''}">${esc(a)}</span>`;
+  }).join('');
+
+  const ncWarnHtml = r.ncHits.length
+    ? `<div class="teams-nc-warn">🚫 以下 ASIN 在 No-Convert 清單中：${r.ncHits.map(h => `<strong>${esc(h.value)}</strong>`).join('、')}</div>`
+    : '';
+
+  const wsOpts = state.workspaces.map(w => `<option value="${w.id}">${esc(w.name)}</option>`).join('');
+  const bmOpts = ['', ...state.bms].map(b => `<option value="${esc(b)}">${b ? esc(b) : '— 選擇 BM —'}</option>`).join('');
+
+  box.innerHTML = `
+    <div class="teams-result-box">
+      <div class="teams-result-title">解析結果</div>
+      ${ncWarnHtml}
+      <div style="margin-bottom:8px;">
+        <span class="teams-action-badge" style="background:${catColor[r.cat]||'rgba(160,160,160,.15)'};color:${catTextColor[r.cat]||'var(--tx2)'}">
+          ${r.label}
+        </span>
+      </div>
+
+      ${r.skus.length ? `
+        <div style="font-size:11px;color:var(--tx2);margin-bottom:5px;">SKU <span style="color:var(--tx)">${r.skus.length} 筆</span></div>
+        <div class="teams-sku-grid">${skuChips}</div>` : ''}
+
+      ${r.asins.length ? `
+        <div style="font-size:11px;color:var(--tx2);margin-bottom:5px;">ASIN <span style="color:var(--tx)">${r.asins.length} 筆</span></div>
+        <div class="teams-sku-grid">${asinChips}</div>` : ''}
+
+      ${r.instrLine ? `<div style="font-size:11px;color:var(--tx2);margin-top:4px;font-style:italic">"${esc(r.instrLine.slice(0,120))}"</div>` : ''}
+    </div>
+
+    <div class="teams-result-box">
+      <div class="teams-result-title">建立 Task 設定</div>
+      <div class="teams-field-row">
+        <label>分類</label>
+        <select id="teams-cat">
+          ${['Create listing','Fix listing','Convert Barcode','Create Sell Yours','LOA','問題排查','其他'].map(c =>
+            `<option value="${c}" ${c === r.cat ? 'selected' : ''}>${c}</option>`).join('')}
+        </select>
+      </div>
+      <div class="teams-field-row">
+        <label>Workspace</label>
+        <select id="teams-ws">${wsOpts}</select>
+      </div>
+      <div class="teams-field-row">
+        <label>BM</label>
+        <div style="position:relative;flex:1;min-width:120px">
+          <input id="teams-bm" class="ac-input" placeholder="BM name" autocomplete="off" list="teams-bm-dl" style="margin:0;width:100%">
+          <datalist id="teams-bm-dl">${state.bms.map(b=>`<option value="${esc(b)}">`).join('')}</datalist>
+        </div>
+      </div>
+      <div class="teams-field-row">
+        <label>描述</label>
+        <input id="teams-desc" value="${esc(r.instrLine.slice(0,120)||r.label+' — '+r.skus.length+' SKUs')}" style="margin:0;flex:1">
+      </div>
+      <button class="btn-primary" style="margin-top:8px" onclick="teamsCreateTask()">✓ 建立 Task（${r.skus.length + r.asins.length} 筆 SKU/ASIN）</button>
+    </div>`;
+}
+
+function teamsCreateTask() {
+  if (!_teamsResult) return;
+  const wsId = document.getElementById('teams-ws')?.value;
+  const ws = state.workspaces.find(w => w.id === wsId);
+  if (!ws) { alert('請選擇 Workspace'); return; }
+
+  const desc = document.getElementById('teams-desc')?.value.trim() || _teamsResult.label;
+  const cat = document.getElementById('teams-cat')?.value || _teamsResult.cat;
+  const bm = document.getElementById('teams-bm')?.value.trim() || '';
+  if (bm) registerBm(bm);
+
+  // Build shipment list items using current slist col structure
+  const cols = getSlistCols();
+  const skuColKey = cols.find(c => c.key === 'sku')?.key || cols[0]?.key || 'sku';
+  const barcodeColKey = cols.find(c => c.key === 'barcode')?.key || null;
+
+  const items = [
+    ..._teamsResult.skus.map(s => {
+      const obj = {}; cols.forEach(c => obj[c.key] = '');
+      obj[skuColKey] = s;
+      return obj;
+    }),
+    ..._teamsResult.asins.map(a => {
+      const obj = {}; cols.forEach(c => obj[c.key] = '');
+      if (barcodeColKey) obj[barcodeColKey] = a;
+      else obj[skuColKey] = a;
+      return obj;
+    }),
+  ];
+
+  ws.tasks.push({
+    id: Date.now(),
+    desc, cat, bm,
+    vendor: '',
+    asin: _teamsResult.asins[0] || '',
+    sku: '',
+    link: '',
+    status: 'todo',
+    pinned: false,
+    items,
+    period: 'none',
+    periodValue: null,
+  });
+
+  TAG.learn(desc, cat);
+  _teamsResult = null;
+  save();
+
+  // Clear paste area and result
+  const raw = document.getElementById('teams-raw');
+  if (raw) raw.value = '';
+  const box = document.getElementById('teams-result-area');
+  if (box) box.innerHTML = '';
+
+  // Show success then navigate to workspace
+  state.view = wsId;
+  save();
+}
+
+function renderTeamsView(area) {
+  area.innerHTML = `
+    <div style="max-width:700px">
+      <div style="font-size:13px;color:var(--tx2);margin-bottom:16px;line-height:1.6">
+        從 Teams 複製 BM 的訊息貼上，系統自動偵測 SKU 清單和指令類型，一鍵建立 task。
+      </div>
+
+      <div style="background:var(--surf);border:1px solid var(--bd);border-radius:10px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">貼上 Teams 訊息</div>
+        <textarea id="teams-raw" class="teams-paste" placeholder="直接把 BM 的 Teams 訊息整個複製貼上，例如：&#10;&#10;The following SKUs were excluded from shipment preview... CKOD-2WJV-TS-QR-UPC, XI-9AWK-SF39...&#10;Hi listing team, please convert these to X0. Thank you!"></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+          <button class="btn-primary" style="width:auto;padding:8px 20px" onclick="teamsParseAndRender()">⚡ 解析訊息</button>
+          <button class="modal-btn" onclick="document.getElementById('teams-raw').value='';document.getElementById('teams-result-area').innerHTML='';_teamsResult=null;">清除</button>
+        </div>
+      </div>
+
+      <div id="teams-result-area"></div>
+
+      <div style="background:var(--surf2);border:1px solid var(--bd);border-radius:8px;padding:12px;margin-top:8px;">
+        <div style="font-size:10px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">支援的訊息格式</div>
+        <div style="font-size:11px;color:var(--tx2);line-height:1.8">
+          • SKU 清單：逗號分隔，格式如 <code style="background:var(--surf);padding:1px 5px;border-radius:3px;font-size:11px">CKOD-2WJV-TS</code><br>
+          • 指令偵測：convert to X0 / fix listing / create listing / sell yours / LOA<br>
+          • ASIN 偵測：自動識別 B0 開頭的 10 碼編號<br>
+          • No-Convert 警告：ASIN 若在例外清單會自動標紅
+        </div>
+      </div>
+    </div>`;
+}
+/* ── Weekly Review ── */
+let _wrOffset = 0;
+
+function getWeekRange(offset){
+  const now=new Date();
+  const mon=new Date(now);
+  mon.setDate(now.getDate()-((now.getDay()+6)%7)+offset*7);
+  mon.setHours(0,0,0,0);
+  const sun=new Date(mon.getTime()+6*86400000);
+  sun.setHours(23,59,59,999);
+  return{mon,sun,monStr:dateKey(mon),sunStr:dateKey(sun),
+    label:`${mon.getMonth()+1}/${mon.getDate()} – ${sun.getMonth()+1}/${sun.getDate()}`};
+}
+
+function buildWeeklyReport(offset){
+  const range=getWeekRange(offset);
+  const allTasks=getAllTasks();
+  const completed=allTasks.filter(x=>{
+    if(x.task.status!=='done')return false;
+    const ts=x.task.scheduledDate||dateKey(new Date(x.task.id));
+    return ts>=range.monStr&&ts<=range.sunStr;
+  });
+  const created=allTasks.filter(x=>{
+    const ts=dateKey(new Date(x.task.id));
+    return ts>=range.monStr&&ts<=range.sunStr;
+  });
+  const wip=allTasks.filter(x=>x.task.status==='wip');
+  const inProgress=allTasks.filter(x=>['todo','wip'].includes(x.task.status));
+  const byCat={};
+  [...completed,...created].forEach(x=>{
+    const c=x.task.cat||'其他';
+    if(!byCat[c])byCat[c]={done:0,total:0};
+    byCat[c].total++;
+    if(x.task.status==='done')byCat[c].done++;
+  });
+  const byBm={};
+  completed.forEach(x=>{const b=x.task.bm||'（未指定）';byBm[b]=(byBm[b]||0)+1;});
+  const bmEntries=Object.entries(byBm).sort((a,b)=>b[1]-a[1]);
+  const maxBm=bmEntries[0]?.[1]||1;
+  return{range,completed,created,inProgress,wip,byCat,bmEntries,maxBm};
+}
+
+function generateReportText(r){
+  const{range,completed,created,wip,byCat}=r;
+  const catLines=Object.entries(byCat).sort((a,b)=>b[1].done-a[1].done)
+    .map(([cat,v])=>`  • ${cat}: 完成 ${v.done} 件`).join('\n');
+  const wipLines=wip.slice(0,5).map(x=>`  • [${x.wsName}] ${x.task.desc}`).join('\n');
+  const now=new Date();
+  return`📊 每週工作回顧 ${range.label}\n產出日期：${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}\n\n✅ 本週完成：${completed.length} 件\n${catLines||'  （無完成任務）'}\n\n📝 本週新增任務：${created.length} 件\n\n🔵 目前進行中（${wip.length} 件）：\n${wipLines||'  （無進行中任務）'}\n\n---\nListing Team Weekly Summary`;
+}
+
+function renderWeeklyView(area){
+  const r=buildWeeklyReport(_wrOffset);
+  const{range,completed,created,inProgress,wip,byCat,bmEntries,maxBm}=r;
+  const isThisWeek=_wrOffset===0;
+  const maxCatDone=Math.max(1,...Object.values(byCat).map(x=>x.done));
+
+  const catRows=Object.entries(byCat).sort((a,b)=>b[1].done-a[1].done).map(([cat,v])=>`
+    <div class="wr-bm-row">
+      <span style="min-width:120px;color:var(--tx)">${esc(cat)}</span>
+      <div class="wr-bar-wrap"><div class="wr-bar" style="width:${Math.round(v.done/maxCatDone*100)}%"></div></div>
+      <span style="color:var(--tx2);min-width:40px;text-align:right">完成 ${v.done}</span>
+    </div>`).join('')||'<div style="color:var(--tx2);font-size:12px">本週無完成任務</div>';
+
+  const bmRows=bmEntries.slice(0,8).map(([bm,cnt])=>`
+    <div class="wr-bm-row">
+      <span style="min-width:100px;color:var(--tx)">${esc(bm)}</span>
+      <div class="wr-bar-wrap"><div class="wr-bar" style="width:${Math.round(cnt/maxBm*100)}%"></div></div>
+      <span style="color:var(--tx2);min-width:30px;text-align:right">${cnt}</span>
+    </div>`).join('')||'<div style="color:var(--tx2);font-size:12px">本週無 BM 對應完成任務</div>';
+
+  const dotColor={todo:'var(--acc)',wip:'#888',done:'var(--grn)'};
+  const inProgRows=[...wip,...inProgress.filter(x=>x.task.status==='todo')].slice(0,6).map(x=>`
+    <div class="wr-task-row">
+      <div class="wr-dot" style="background:${dotColor[x.task.status]}"></div>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.task.desc)}</span>
+      <span style="font-size:10px;color:var(--tx2)">${esc(x.wsName)}</span>
+    </div>`).join('')||'<div style="color:var(--tx2);font-size:12px;padding:6px 0">無待處理任務</div>';
+
+  area.innerHTML=`
+    <div style="max-width:780px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+        <button class="cal-nav" onclick="_wrOffset--;renderWeeklyView(document.getElementById('content-area'))">‹</button>
+        <button class="cal-nav" onclick="_wrOffset=0;renderWeeklyView(document.getElementById('content-area'))">本週</button>
+        <button class="cal-nav" onclick="if(_wrOffset<0){_wrOffset++;renderWeeklyView(document.getElementById('content-area'));}" ${isThisWeek?'style="opacity:.3;cursor:default"':''}>›</button>
+        <span style="font-size:14px;font-weight:600">${range.label}${isThisWeek?' · 本週':_wrOffset===-1?' · 上週':''}</span>
+      </div>
+      <div class="wr-grid">
+        <div class="wr-chip"><div class="wc-val" style="color:var(--grn)">${completed.length}</div><div class="wc-lbl">完成</div></div>
+        <div class="wr-chip"><div class="wc-val" style="color:var(--acc)">${created.length}</div><div class="wc-lbl">新增</div></div>
+        <div class="wr-chip"><div class="wc-val" style="color:#888">${wip.length}</div><div class="wc-lbl">進行中</div></div>
+        <div class="wr-chip"><div class="wc-val" style="color:var(--tx2)">${inProgress.filter(x=>x.task.status==='todo').length}</div><div class="wc-lbl">待處理</div></div>
+      </div>
+      <div class="wr-section"><div class="wr-section-title">任務分類</div>${catRows}</div>
+      <div class="wr-section"><div class="wr-section-title">BM 工作量（依完成數）</div>${bmRows}</div>
+      <div class="wr-section"><div class="wr-section-title">未完成 / 進行中</div>${inProgRows}</div>
+      <div class="wr-section">
+        <div class="wr-section-title">匯出報告
+          <button class="modal-btn" style="padding:3px 12px;font-size:11px;margin-left:auto"
+            onclick="navigator.clipboard.writeText(document.getElementById('wr-export-text').value).then(()=>alert('已複製！可貼到 Teams / Email'))">📋 複製</button>
+        </div>
+        <textarea id="wr-export-text" class="wr-export-area" readonly>${generateReportText(r)}</textarea>
+      </div>
+    </div>`;
+}
+
+function buildFormHtml(wsId){
+  const allCats=['Create listing','Fix listing','Convert Barcode','Create Sell Yours','LOA','問題排查','其他'];
+  const catOpts=allCats.map(c=>`<option>${c}</option>`).join('');
+  return`<div class="task-form">
+    <div class="form-title">New Task</div>
+    <div id="nc-form-warn" class="nc-warn" style="display:none"></div>
+    <input id="task-desc" placeholder="Task description..." autocomplete="off"
+      oninput="renderTagSuggestions('task-desc','task-tag-area','task-cat');checkNcWarning()"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();addTask('${wsId}');}">
+    <div id="task-tag-area" class="tag-area"></div>
+    <div class="form-row" style="margin-bottom:7px">
+      <select id="task-cat">${catOpts}</select>
+    </div>
+    <div class="form-row">
+      <div class="ac-wrap">
+        <input id="task-bm" class="ac-input" placeholder="BM name" autocomplete="off" style="margin:0">
+        <div class="ac-drop" id="form-bm-drop" style="display:none"></div>
+      </div>
+      <div class="ac-wrap">
+        <input id="task-vendor" class="ac-input" placeholder="Vendor" autocomplete="off" style="margin:0" oninput="checkNcWarning()">
+        <div class="ac-drop" id="form-vendor-drop" style="display:none"></div>
+      </div>
+    </div>
+    <div class="form-row" style="margin-top:7px">
+      <input id="task-asin" placeholder="ASIN" style="margin:0" oninput="checkNcWarning()">
+      <input id="task-sku" placeholder="SKU" style="margin:0">
+    </div>
+    <input id="task-link" placeholder="Reference link" style="margin-top:7px">
+    <div class="form-check"><input type="checkbox" id="task-recurring" onchange="onFormRecurringChange()"><label for="task-recurring" style="font-size:12px">🔄 週期任務</label></div>
+    <div id="task-rec-wrap" style="display:none;background:var(--surf2);border:1px solid var(--bd);border-radius:8px;padding:10px;margin-bottom:7px;">
+      <select id="task-rec-period" onchange="onFormPeriodChange()" style="margin-bottom:7px">
+        <option value="daily">每日</option><option value="weekly" selected>每週</option><option value="monthly">每月</option>
+      </select>
+      <div id="task-rec-weekly">
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          ${['日','一','二','三','四','五','六'].map((d,i)=>`
+            <label style="display:flex;align-items:center;gap:3px;font-size:12px;cursor:pointer;">
+              <input type="checkbox" class="task-dow-cb" value="${i}" style="width:auto;margin:0;"> ${d}
+            </label>`).join('')}
+        </div>
+      </div>
+      <div id="task-rec-monthly" style="display:none;">
+        <select id="task-rec-monthday" style="margin:0;">
+          <option value="1">月初 (1日)</option>
+          <option value="last">月底</option>
+          ${Array.from({length:28},(_,i)=>`<option value="${i+2}">${i+2} 日</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div style="background:var(--surf2);border:1px solid var(--bd);border-radius:8px;padding:10px;margin-bottom:7px;">
+      <div style="font-size:11px;color:var(--tx2);margin-bottom:5px;">📋 貼上出貨清單（可選）</div>
+      <textarea id="inline-paste-area" class="paste-area" style="height:56px;margin-bottom:5px;" placeholder="從 Excel / Teams 貼上清單..."></textarea>
+      <button class="slist-add-btn" style="border-style:solid;border-color:var(--acc);color:var(--acc);width:100%;" onclick="parseInlinePaste()">⚡ 解析</button>
+      <div id="inline-item-count" style="font-size:11px;color:var(--grn);margin-top:4px;"></div>
+    </div>
+    <div class="rule-toggle" onclick="toggleRuleManager()">⚙ 自訂 Tag 規則 <span id="rule-arrow">▸</span></div>
+    <div id="rule-manager-wrap" style="display:none"><div id="rule-manager-container"></div></div>
+    <button class="btn-primary" onclick="addTask('${wsId}')">+ Add Task</button>
+  </div>`;
+}
+
+function toggleRuleManager(){
+  const wrap=document.getElementById('rule-manager-wrap');
+  const arrow=document.getElementById('rule-arrow');
+  if(!wrap)return;
+  const open=wrap.style.display==='none';
+  wrap.style.display=open?'block':'none';
+  if(arrow)arrow.textContent=open?'▾':'▸';
+  if(open)renderRuleManager('rule-manager-container');
+}
+
+/* ── Build Card ── */
+function periodLabel(task){
+  if(!task.period||task.period==='none')return'';
+  if(task.period==='daily')return'每日';
+  if(task.period==='weekly'){
+    const days=Array.isArray(task.periodValue)?task.periodValue:[];
+    const names=['日','一','二','三','四','五','六'];
+    return'每週 '+( days.map(d=>names[d]).join('/')|| '—');
+  }
+  if(task.period==='monthly'){
+    const pv=task.periodValue;
+    if(pv==='last')return'每月底';
+    if(pv==='1')return'每月初';
+    return`每月${pv}日`;
+  }
+  return'';
+}
+
+function buildCardHtml(item,isDash){
+  const t=item.task;const wsId=item.wsId;
+  const linkDisplay=t.link?t.link.replace(/^https?:\/\//,'').slice(0,30)+(t.link.length>33?'…':''):'';
+  const statusOpts=['todo','wip','done','trash'].map(s=>
+    `<option value="${s}" ${t.status===s?'selected':''}>${STATUS_LABEL[s]}</option>`).join('');
+  const overdue=isPeriodOverdue(t);
+  const hasPeriod=t.period&&t.period!=='none';
+  const cardCls=['task-card',
+    t.pinned?'pinned':'',
+    t.status==='wip'?'is-wip':'',
+    hasPeriod&&overdue?'period-overdue':hasPeriod?'has-period':'',
+  ].filter(Boolean).join(' ');
+  const pLabel=periodLabel(t);
+
+  return`<div class="${cardCls}">
+    <div class="card-top">
+      <div class="card-badges">
+        <span class="badge b-cat">${t.cat||'—'}</span>
+        ${t.pinned?'<span class="badge b-pin">⭐ 優先</span>':''}
+        ${t.status==='wip'?'<span class="badge" style="background:rgba(85,85,85,.25);color:#AAA">● WIP</span>':''}
+        ${pLabel?`<span class="badge" style="background:rgba(160,160,160,.1);color:var(--tx2)">🔄 ${pLabel}</span>`:''}
+        ${isDash?`<span class="badge b-ws">${item.wsName}</span>`:''}
+        ${overdue?'<span class="period-alert" title="本週期尚未完成">!</span>':''}
+      </div>
+      <div class="ie-wrap">
+        <select class="ie-select" onchange="changeStatus('${wsId}',${t.id},this.value)" onclick="event.stopPropagation()">${statusOpts}</select>
+      </div>
+    </div>
+    <div class="task-desc">${esc(t.desc)}</div>
+    <div class="task-fields">
+      ${t.bm?`<div class="task-field">BM <span>${esc(t.bm)}</span></div>`:''}
+      ${t.vendor?`<div class="task-field">Vendor <span>${esc(t.vendor)}</span></div>`:''}
+      ${t.asin?`<div class="task-field">ASIN <span>${esc(t.asin)}</span></div>`:''}
+      ${t.sku?`<div class="task-field">SKU <span>${esc(t.sku)}</span></div>`:''}
+    </div>
+    ${t.link?`<a href="${t.link}" target="_blank" class="task-link">🔗 <span class="task-link-text">${linkDisplay}</span></a>`:''}
+    ${(t.items?.length)?`<div class="slist-chip" onclick="openSlistModal('${wsId}',${t.id})">📋 清單 ${t.items.length} 筆</div>`:''}
+    <div class="task-actions">
+      <button class="card-btn pin" onclick="togglePin('${wsId}',${t.id})">${t.pinned?'取消標記':'⭐'}</button>
+      <button class="card-btn" onclick="openSlistModal('${wsId}',${t.id})">📋</button>
+      <button class="card-btn${t.scheduledDate?' blue':''}" onclick="openSchModal('${wsId}',${t.id})" title="${t.scheduledDate?'已排程：'+t.scheduledDate:'排程到行事曆'}">📅${t.scheduledDate?' '+t.scheduledDate.slice(5):''}</button>
+      <button class="card-btn amb" onclick="openEditModal('${wsId}',${t.id})">Edit</button>
+      ${t.status!=='trash'?`<button class="card-btn red" onclick="changeStatus('${wsId}',${t.id},'trash')">Del</button>`:''}
+      ${t.status==='trash'?`<button class="card-btn grn" onclick="changeStatus('${wsId}',${t.id},'todo')">Restore</button>`:''}
+    </div>
+  </div>`;
+}
+
+function buildRecCardHtml(r){
+  return`<div class="task-card recurring-card" style="min-width:180px;max-width:220px">
+    <div class="card-top"><div class="card-badges"><span class="badge b-rec">🔄 ${FREQ_LABEL[r.freq]||r.freq}</span></div></div>
+    <div class="task-desc">${esc(r.desc)}</div>
+    <div class="task-actions">
+      <button class="card-btn ${r.active?'red':'grn'}" onclick="toggleRecActive('${r.id}')">${r.active?'暫停':'啟用'}</button>
+      <button class="card-btn red" onclick="deleteRec('${r.id}')">刪除</button>
+    </div>
+  </div>`;
+}
+
+/* ── Vendor Bulk Import ── */
+let _vrPreviewRows=[];
+function triggerVrImport(){document.getElementById('vr-import-file').click();}
+document.getElementById('vr-import-file').addEventListener('change',function(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    const wb=XLSX.read(ev.target.result,{type:'binary'});
+    const json=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+    if(!json.length){alert('檔案沒有資料');return;}
+    // detect columns
+    const VR_MAP={
+      vendor:['vendor','distributor','vendor name','distributor name'],
+      brand:['brand','brand name'],
+      source:['source','type'],
+      result:['result','status','approval'],
+      remark:['remark','note','special note','comment'],
+      name:['name','handled by','person']
+    };
+    const headers=Object.keys(json[0]);
+    const colMap={};
+    Object.entries(VR_MAP).forEach(([field,aliases])=>{
+      const found=headers.find(h=>aliases.some(a=>h.toLowerCase().trim()===a));
+      if(found)colMap[field]=found;
+    });
+    _vrPreviewRows=json.map(row=>({
+      id:'vr'+Date.now()+Math.random(),
+      vendor:(colMap.vendor?row[colMap.vendor]:'').toString().trim(),
+      brand:(colMap.brand?row[colMap.brand]:'').toString().trim(),
+      source:(colMap.source?row[colMap.source]:'Admin').toString().trim()||'Admin',
+      result:(colMap.result?row[colMap.result]:'').toString().trim(),
+      remark:(colMap.remark?row[colMap.remark]:'').toString().trim(),
+      name:(colMap.name?row[colMap.name]:'').toString().trim(),
+      ts:new Date().toISOString()
+    })).filter(r=>r.vendor||r.brand);
+
+    document.getElementById('vr-preview-info').textContent=`共 ${_vrPreviewRows.length} 筆，偵測到欄位：${Object.keys(colMap).join('、') || '（未知，請確認）'}`;
+    document.getElementById('vr-preview-thead').innerHTML='<tr>'+['Vendor','Brand','Source','Result','Remark','Name'].map(h=>`<th>${h}</th>`).join('')+'</tr>';
+    document.getElementById('vr-preview-body').innerHTML=_vrPreviewRows.slice(0,50).map(r=>`
+      <tr>
+        <td>${esc(r.vendor)}</td><td>${esc(r.brand)}</td><td style="color:var(--tx2)">${esc(r.source)}</td>
+        <td><span class="result-pill ${resultClass(r.result)}">${r.result||'—'}</span></td>
+        <td style="color:var(--tx2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.remark)}</td>
+        <td style="color:var(--tx2)">${esc(r.name)}</td>
+      </tr>`).join('')+(_vrPreviewRows.length>50?`<tr><td colspan="6" style="text-align:center;padding:8px;color:var(--tx2)">... 還有 ${_vrPreviewRows.length-50} 筆</td></tr>`:'');
+    document.getElementById('vr-preview-modal').style.display='flex';
+  };
+  reader.readAsBinaryString(file);e.target.value='';
+});
+function confirmVrImport(){
+  let added=0,updated=0;
+  _vrPreviewRows.forEach(row=>{
+    const exists=state.vendorRelations.find(r=>r.vendor===row.vendor&&r.brand===row.brand);
+    if(exists){Object.assign(exists,row);updated++;}
+    else{state.vendorRelations.push(row);added++;}
+  });
+  closeVrPreview();
+  save();
+  alert(`匯入完成！新增 ${added} 筆，更新 ${updated} 筆`);
+}
+function closeVrPreview(){document.getElementById('vr-preview-modal').style.display='none';_vrPreviewRows=[];}
+
+/* ── Calendar ── */
+let calView='month'; // 'month' | 'week'
+let calDate=new Date();    // anchor date
+let calSelected=null;      // 'YYYY-MM-DD'
+const DOW=['日','一','二','三','四','五','六'];
+const MONTHS=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+
+function dateKey(d){return d.toISOString().slice(0,10);}
+function todayKey(){return dateKey(new Date());}
+function getDay(key){
+  if(!state.calendar)state.calendar={};
+  if(!state.calendar[key])state.calendar[key]={note:'',items:[]};
+  return state.calendar[key];
+}
+function saveDay(){localStorage.setItem('listing_v13',JSON.stringify(state));}
+
+function calNav(dir){
+  if(calView==='month'){
+    calDate=new Date(calDate.getFullYear(),calDate.getMonth()+dir,1);
+  } else {
+    calDate=new Date(calDate.getTime()+dir*7*86400000);
+  }
+  renderCalendar(document.getElementById('content-area'));
+}
+function calGoToday(){calDate=new Date();renderCalendar(document.getElementById('content-area'));}
+function setCalView(v){calView=v;renderCalendar(document.getElementById('content-area'));}
+function selectDay(key){
+  calSelected=key;
+  renderCalendar(document.getElementById('content-area'));
+}
+
+function buildMonthGrid(){
+  const y=calDate.getFullYear(),m=calDate.getMonth();
+  const first=new Date(y,m,1);
+  const startDow=first.getDay();
+  const today=todayKey();
+  let cells='';
+  // header
+  cells+=DOW.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  // blank before month start
+  let d=new Date(y,m,1-startDow);
+  for(let i=0;i<42;i++){
+    const key=dateKey(d);
+    const isThisMonth=d.getMonth()===m;
+    const day=getDay(key);
+    const checks=day.items||[];
+    const drinks=day.drinks||[];
+    const drinkTotal=drinks.reduce((s,d)=>s+(parseFloat(d.price)||0),0);
+    const scheduledCount=getAllTasks().filter(x=>x.task.scheduledDate===key&&x.task.status!=='trash').length;
+    const notePreview=day.note?day.note.slice(0,60):'';
+    const cls=['cal-cell',!isThisMonth?'other-month':'',key===today?'today':'',key===calSelected?'selected':''].filter(Boolean).join(' ');
+    cells+=`<div class="${cls}" onclick="selectDay('${key}')">
+      <div class="cal-date">${d.getDate()}</div>
+      ${notePreview?`<div class="cal-note-preview">${esc(notePreview)}</div>`:''}
+      ${scheduledCount?`<div style="font-size:10px;color:var(--blue);margin-top:3px">📌 ${scheduledCount}</div>`:''}
+      ${drinks.length?`<div style="font-size:10px;color:var(--amb);margin-top:2px">🧋${drinks.length>1?' ×'+drinks.length:''} ${drinkTotal?'$'+drinkTotal:''}</div>`:''}
+      ${checks.length?`<div class="cal-check-bar">${checks.map(x=>`<div class="cal-check-dot${x.done?' done':''}"></div>`).join('')}</div>`:''}
+    </div>`;
+    d=new Date(d.getTime()+86400000);
+  }
+  return`<div class="cal-grid">${cells}</div>`;
+}
+
+function buildWeekGrid(){
+  const d=new Date(calDate);
+  d.setDate(d.getDate()-d.getDay()); // start of week
+  const today=todayKey();
+  let cells='';
+  for(let i=0;i<7;i++){
+    const key=dateKey(d);
+    const day=getDay(key);
+    const cls=['week-cell',key===today?'today':'',key===calSelected?'selected':''].filter(Boolean).join(' ');
+    const scheduledTasks=getAllTasks().filter(x=>x.task.scheduledDate===key&&x.task.status!=='trash');
+    const taskChips=scheduledTasks.slice(0,4).map(x=>`
+      <div class="cal-task-chip${x.task.status==='done'?' done-chip':''}" style="margin-top:4px" onclick="event.stopPropagation();openEditModal('${x.wsId}',${x.task.id})">
+        <span class="ctc-cat">${esc(x.task.cat||'—')}</span>
+        <span class="ctc-desc">${esc(x.task.desc)}</span>
+      </div>`).join('');
+    const moreCount=scheduledTasks.length-4;
+    const checkHtml=day.items?.length?`<div style="margin-top:8px">${day.items.map(x=>`
+      <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">
+        <div class="cl-check${x.done?' checked':''}" style="width:13px;height:13px;"></div>
+        <span style="font-size:11px;color:var(--tx2);${x.done?'text-decoration:line-through':''}">${esc(x.text)}</span>
+      </div>`).join('')}</div>`:'';
+    cells+=`<div class="${cls}" onclick="selectDay('${key}')">
+      <div class="week-dow">${DOW[d.getDay()]}</div>
+      <div class="week-date">${d.getDate()}</div>
+      ${taskChips}
+      ${moreCount>0?`<div style="font-size:10px;color:var(--tx2);margin-top:3px">+${moreCount} 個</div>`:''}
+      ${day.note?`<div class="week-note" style="margin-top:6px">${esc(day.note.slice(0,120))}</div>`:''}
+      ${checkHtml}
+    </div>`;
+    d.setDate(d.getDate()+1);
+  }
+  return`<div class="week-grid">${cells}</div>`;
+}
+
+function buildDayPanel(){
+  if(!calSelected)return'';
+  const day=getDay(calSelected);
+  const d=new Date(calSelected+'T12:00:00');
+  const dateStr=`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 (${DOW[d.getDay()]})`;
+  const items=day.items||[];
+
+  // checklist
+  const checkHtml=items.map((item,i)=>{
+    const isCr=!!item._crId;
+    const crLabel=isCr?calRecurringPeriodLabel(getCalRecurring().find(x=>x.id===item._crId)||{}):null;
+    return`<div class="checklist-item">
+      <div class="cl-check${item.done?' checked':''}" onclick="toggleCheck('${calSelected}',${i})"></div>
+      <input class="cl-text${item.done?' done-text':''}" value="${esc(item.text)}"
+        oninput="updateCheckText('${calSelected}',${i},this.value)"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();addCheckItem('${calSelected}');}">
+      ${isCr?`<span style="font-size:9px;color:var(--amb);white-space:nowrap;flex-shrink:0">🔄${crLabel?' '+crLabel:''}</span>`:''}
+      ${!isCr?`<button class="cl-del" onclick="deleteCheckItem('${calSelected}',${i})">×</button>`:''}
+    </div>`;
+  }).join('');
+
+  // scheduled tasks for this day
+  const scheduled=getAllTasks().filter(x=>x.task.scheduledDate===calSelected&&x.task.status!=='trash');
+  const sStatusCls={todo:'ctc-s-todo',wip:'ctc-s-wip',done:'ctc-s-done'};
+  const scheduledHtml=scheduled.map(x=>`
+    <div class="cal-task-chip${x.task.status==='done'?' done-chip':''}" onclick="openEditModal('${x.wsId}',${x.task.id})">
+      <span class="ctc-cat">${esc(x.task.cat||'—')}</span>
+      <span class="ctc-desc">${esc(x.task.desc)}</span>
+      <span class="ctc-status ${sStatusCls[x.task.status]||'ctc-s-todo'}">${STATUS_LABEL[x.task.status]||x.task.status}</span>
+      <span class="ctc-ws">${esc(x.wsName)}</span>
+      <button class="ctc-rm" onclick="unscheduleTask('${x.wsId}',${x.task.id},event)" title="移除排程">×</button>
+    </div>`).join('');
+
+  return`<div class="cal-panel" id="cal-panel">
+    <div class="panel-header">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="panel-date">${dateStr}</div>
+        <button class="panel-close" onclick="calSelected=null;renderCalendar(document.getElementById('content-area'))">×</button>
+      </div>
+    </div>
+    <div class="panel-body">
+
+      <div class="panel-label" style="margin-bottom:6px">📌 排程任務 <span style="color:var(--tx2);font-weight:400">(${scheduled.length})</span></div>
+      ${scheduledHtml||`<div style="font-size:12px;color:var(--tx2);margin-bottom:6px">尚無排程任務</div>`}
+      <div class="add-task-search" style="margin-bottom:14px;">
+        <input id="add-task-search-inp" class="ac-input" placeholder="搜尋並加入 task..." autocomplete="off"
+          oninput="renderAddTaskDrop('${calSelected}',this.value)"
+          onfocus="renderAddTaskDrop('${calSelected}',this.value)"
+          onblur="setTimeout(()=>{const d=document.getElementById('add-task-drop');if(d)d.style.display='none';},150)">
+        <div class="add-task-drop" id="add-task-drop" style="display:none"></div>
+      </div>
+
+      <div class="panel-label">備註</div>
+      <textarea class="day-note" id="day-note-${calSelected}"
+        oninput="updateDayNote('${calSelected}',this.value)"
+        placeholder="今天的計劃、備忘...">${esc(day.note||'')}</textarea>
+
+      <div class="panel-label">Checklist</div>
+      <div id="checklist-${calSelected}">${checkHtml}</div>
+      <button class="add-cl-btn" onclick="addCheckItem('${calSelected}')">+ 新增一次性項目</button>
+
+      <div style="margin-top:12px;">
+        <div class="rule-toggle" onclick="toggleCalRecManager()" style="margin-bottom:6px">
+          🔄 週期 Checklist 管理 <span id="cal-rec-arrow">▸</span>
+          ${getCalRecurring().length?`<span style="font-size:10px;color:var(--amb);margin-left:4px">${getCalRecurring().length} 個</span>`:''}
+        </div>
+        <div id="cal-rec-wrap" style="display:none">
+          <div id="cal-rec-manager"></div>
+          <button class="add-cl-btn" style="margin-top:4px" onclick="addCalRecurring()">+ 新增週期項目</button>
+        </div>
+      </div>
+
+      <div class="panel-label" style="margin-top:14px">🧋 今日飲料
+        <span style="font-size:10px;font-weight:400;color:var(--tx2);margin-left:4px">飲料 · 店家 · 金額</span>
+      </div>
+      <div style="font-size:10px;color:var(--tx2);display:grid;grid-template-columns:1fr 1fr 60px 18px;gap:0 6px;padding:0 0 4px;border-bottom:1px solid var(--bd);margin-bottom:2px">
+        <span>飲料名稱</span><span>店家</span><span style="text-align:right">金額</span><span></span>
+      </div>
+      <div id="drink-list-${calSelected}"></div>
+      <div id="drink-total-${calSelected}" class="drink-total"></div>
+      <button class="add-cl-btn" style="margin-top:6px" onclick="addDrink('${calSelected}')">+ 新增飲料</button>
+    </div>
+  </div>`;
+}
+
+function renderAddTaskDrop(dayKey, q){
+  const drop=document.getElementById('add-task-drop');
+  if(!drop)return;
+  const results=calSearchTasks(q,dayKey).filter(x=>x.task.scheduledDate!==dayKey);
+  if(!results.length){drop.innerHTML=`<div class="ac-empty">${q?'無符合任務':'所有任務已排程或輸入關鍵字搜尋'}</div>`;drop.style.display='block';return;}
+  drop.innerHTML=results.slice(0,15).map(x=>`
+    <div class="add-task-item" onmousedown="event.preventDefault();assignTaskToDay('${x.wsId}',${x.task.id},'${dayKey}')">
+      <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.task.desc)}</div>
+      <div class="ati-ws">${esc(x.wsName)} · ${x.task.cat||'—'}</div>
+    </div>`).join('');
+  drop.style.display='block';
+}
+
+function updateDayNote(key,val){
+  getDay(key).note=val;saveDay();
+  // refresh previews without full re-render
+  document.querySelectorAll('.cal-note-preview').forEach(el=>{
+    const cell=el.closest('[onclick]');
+    if(cell&&cell.getAttribute('onclick')===`selectDay('${key}')`)el.textContent=val.slice(0,60);
+  });
+}
+function toggleCheck(key,i){
+  const day=getDay(key);
+  day.items[i].done=!day.items[i].done;
+  // if this is a recurring item and just marked done, record the date
+  const crId=day.items[i]._crId;
+  if(crId&&day.items[i].done){
+    const cr=getCalRecurring().find(x=>x.id===crId);
+    if(cr)cr.lastDoneDate=key;
+  }
+  saveDay();
+  renderCalendar(document.getElementById('content-area'));
+}
+function updateCheckText(key,i,val){getDay(key).items[i].text=val;saveDay();}
+function addCheckItem(key){
+  getDay(key).items.push({text:'',done:false});saveDay();
+  renderCalendar(document.getElementById('content-area'));
+  // focus new input
+  setTimeout(()=>{
+    const inputs=document.querySelectorAll(`#checklist-${key} .cl-text`);
+    if(inputs.length)inputs[inputs.length-1].focus();
+  },30);
+}
+function deleteCheckItem(key,i){getDay(key).items.splice(i,1);saveDay();renderCalendar(document.getElementById('content-area'));}
+
+/* ── Drink Tracker ── */
+function getDrinks(key){
+  const day=getDay(key);
+  if(!day.drinks)day.drinks=[];
+  return day.drinks;
+}
+
+// Build drink memory: scan all calendar days, return [{name, shop, price, count}]
+function getDrinkMemory(){
+  const mem={};
+  if(!state.calendar)return[];
+  Object.values(state.calendar).forEach(day=>{
+    (day.drinks||[]).forEach(d=>{
+      if(!d.name)return;
+      const key=d.name.toLowerCase().trim();
+      if(!mem[key])mem[key]={name:d.name,shop:d.shop||'',price:d.price||'',count:0};
+      mem[key].count++;
+      // price: always take the most recently seen non-empty price
+      if(d.price)mem[key].price=d.price;
+      if(d.shop)mem[key].shop=d.shop;
+    });
+  });
+  return Object.values(mem).sort((a,b)=>b.count-a.count);
+}
+
+function getShopMemory(){
+  const shops=new Set();
+  if(!state.calendar)return[];
+  Object.values(state.calendar).forEach(day=>{
+    (day.drinks||[]).forEach(d=>{if(d.shop)shops.add(d.shop.trim());});
+  });
+  return[...shops];
+}
+
+function addDrink(key){
+  getDrinks(key).push({name:'',shop:'',price:''});
+  saveDay();
+  renderDrinkList(key);
+  setTimeout(()=>{
+    const rows=document.querySelectorAll(`#drink-list-${key} .drink-name .drink-input`);
+    if(rows.length)rows[rows.length-1].focus();
+  },30);
+}
+
+function updateDrink(key,i,field,val){
+  const drinks=getDrinks(key);
+  if(drinks[i])drinks[i][field]=val;
+  saveDay();
+  renderDrinkTotal(key);
+}
+
+function deleteDrink(key,i){
+  getDrinks(key).splice(i,1);
+  saveDay();
+  renderDrinkList(key);
+}
+
+function renderDrinkTotal(key){
+  const drinks=getDrinks(key);
+  const total=drinks.reduce((sum,d)=>sum+(parseFloat(d.price)||0),0);
+  const el=document.getElementById(`drink-total-${key}`);
+  if(el)el.innerHTML=drinks.length?`今日飲料支出：<span>NT$ ${total}</span>`:'';
+}
+
+// Autocomplete helpers
+function drinkAcShow(dropId,items){
+  const drop=document.getElementById(dropId);
+  if(!drop)return;
+  if(!items.length){drop.style.display='none';return;}
+  drop.innerHTML=items.map((x,i)=>`
+    <div class="drink-ac-item" data-i="${i}">
+      <span class="drink-ac-name">${esc(x.name||x)}</span>
+      ${x.shop||x.price?`<span class="drink-ac-sub">${[x.shop,x.price?'NT$'+x.price:''].filter(Boolean).join(' · ')}</span>`:''}
+    </div>`).join('');
+  drop.style.display='block';
+}
+
+function drinkNameInput(key,i,val,dropId){
+  updateDrink(key,i,'name',val);
+  // fuzzy filter drink memory
+  const mem=getDrinkMemory();
+  const lq=val.toLowerCase();
+  const hits=lq?mem.filter(m=>m.name.toLowerCase().includes(lq)):mem.slice(0,6);
+  drinkAcShow(dropId,hits);
+}
+
+function drinkShopInput(key,i,val,dropId){
+  updateDrink(key,i,'shop',val);
+  const shops=getShopMemory();
+  const lq=val.toLowerCase();
+  const hits=lq?shops.filter(s=>s.toLowerCase().includes(lq)).map(s=>({name:s})):shops.slice(0,6).map(s=>({name:s}));
+  drinkAcShow(dropId,hits);
+}
+
+function drinkSelectName(key,i,m,dropId){
+  const drinks=getDrinks(key);
+  if(!drinks[i])return;
+  drinks[i].name=m.name;
+  if(m.shop)drinks[i].shop=m.shop;
+  if(m.price)drinks[i].price=m.price;
+  saveDay();
+  renderDrinkList(key);
+  document.getElementById(dropId)?.style && (document.getElementById(dropId).style.display='none');
+}
+
+function drinkSelectShop(key,i,shopName,dropId){
+  updateDrink(key,i,'shop',shopName);
+  document.getElementById(dropId)?.style && (document.getElementById(dropId).style.display='none');
+  // re-render to show updated value
+  renderDrinkList(key);
+}
+
+function hideDrinkDrop(dropId){
+  setTimeout(()=>{
+    const d=document.getElementById(dropId);
+    if(d)d.style.display='none';
+  },150);
+}
+
+function renderDrinkList(key){
+  const drinks=getDrinks(key);
+  const list=document.getElementById(`drink-list-${key}`);
+  if(!list)return;
+  list.innerHTML=drinks.map((d,i)=>{
+    const nameDropId=`drink-name-drop-${key}-${i}`;
+    const shopDropId=`drink-shop-drop-${key}-${i}`;
+    return`<div class="drink-row">
+      <span class="drink-emoji">🧋</span>
+      <div class="drink-name">
+        <input class="drink-input" value="${esc(d.name)}" placeholder="飲料名稱" autocomplete="off"
+          oninput="drinkNameInput('${key}',${i},this.value,'${nameDropId}')"
+          onfocus="drinkNameInput('${key}',${i},this.value,'${nameDropId}')"
+          onblur="hideDrinkDrop('${nameDropId}')">
+        <div class="drink-ac-drop" id="${nameDropId}" style="display:none"
+          onmousedown="event.preventDefault()"></div>
+      </div>
+      <div class="drink-shop">
+        <input class="drink-input" value="${esc(d.shop)}" placeholder="店家" autocomplete="off"
+          oninput="drinkShopInput('${key}',${i},this.value,'${shopDropId}')"
+          onfocus="drinkShopInput('${key}',${i},this.value,'${shopDropId}')"
+          onblur="hideDrinkDrop('${shopDropId}')">
+        <div class="drink-ac-drop" id="${shopDropId}" style="display:none"
+          onmousedown="event.preventDefault()"></div>
+      </div>
+      <div class="drink-price">
+        <input class="drink-input" value="${esc(d.price)}" placeholder="$" type="number" min="0"
+          oninput="updateDrink('${key}',${i},'price',this.value)" style="text-align:right">
+      </div>
+      <button class="drink-del" onclick="deleteDrink('${key}',${i})">×</button>
+    </div>`;
+  }).join('');
+  renderDrinkTotal(key);
+  // wire dropdown item clicks after render
+  drinks.forEach((d,i)=>{
+    const nameDropId=`drink-name-drop-${key}-${i}`;
+    const shopDropId=`drink-shop-drop-${key}-${i}`;
+    const nameDrop=document.getElementById(nameDropId);
+    const shopDrop=document.getElementById(shopDropId);
+    if(nameDrop){
+      nameDrop.querySelectorAll('.drink-ac-item').forEach((el,j)=>{
+        const mem=getDrinkMemory();
+        const lq=(d.name||'').toLowerCase();
+        const hits=lq?mem.filter(m=>m.name.toLowerCase().includes(lq)):mem.slice(0,6);
+        if(hits[j])el.addEventListener('click',()=>drinkSelectName(key,i,hits[j],nameDropId));
+      });
+    }
+    if(shopDrop){
+      shopDrop.querySelectorAll('.drink-ac-item').forEach((el,j)=>{
+        const shops=getShopMemory();
+        const lq=(d.shop||'').toLowerCase();
+        const hits=lq?shops.filter(s=>s.toLowerCase().includes(lq)):shops.slice(0,6);
+        if(hits[j])el.addEventListener('click',()=>drinkSelectShop(key,i,hits[j],shopDropId));
+      });
+    }
+  });
+}
+
+function toggleCalRecManager(){
+  const wrap=document.getElementById('cal-rec-wrap');
+  const arrow=document.getElementById('cal-rec-arrow');
+  if(!wrap)return;
+  const open=wrap.style.display==='none';
+  wrap.style.display=open?'block':'none';
+  if(arrow)arrow.textContent=open?'▾':'▸';
+  if(open)renderCalRecurringManager(document.getElementById('cal-rec-manager'));
+}
+
+/* ── Cal Recurring Checklist ── */
+function getCalRecurring(){if(!state.calRecurring)state.calRecurring=[];return state.calRecurring;}
+
+function calRecurringPeriodLabel(cr){
+  if(cr.period==='daily')return'每日';
+  if(cr.period==='weekly'){
+    const names=['日','一','二','三','四','五','六'];
+    const days=Array.isArray(cr.periodValue)?cr.periodValue:[];
+    return'每週 '+(days.map(d=>names[d]).join('/')||'—');
+  }
+  if(cr.period==='monthly'){
+    const pv=cr.periodValue;
+    if(pv==='last')return'每月底';
+    if(pv==='1')return'每月初';
+    return`每月${pv}日`;
+  }
+  return'—';
+}
+
+function addCalRecurring(){
+  const text=prompt('週期 Checklist 項目名稱：');if(!text?.trim())return;
+  getCalRecurring().push({
+    id:'cr'+Date.now(),text:text.trim(),
+    period:'daily',periodValue:null,lastDoneDate:null
+  });
+  saveDay();
+  renderCalRecurringManager(document.getElementById('cal-rec-manager'));
+  // inject into today if applicable
+  runCalRecurringInject();
+  renderCalendar(document.getElementById('content-area'));
+}
+
+function runCalRecurringInject(){
+  const todayStr=todayKey();
+  const today=new Date();
+  const calDay=getDay(todayStr);
+  getCalRecurring().forEach(cr=>{
+    if(!cr.period||cr.period==='none')return;
+    const pseudo={period:cr.period,periodValue:cr.periodValue};
+    if(!shouldResetToday(pseudo,today,''))return;
+    const alreadyIn=calDay.items.find(x=>x._crId===cr.id);
+    if(!alreadyIn)calDay.items.push({text:cr.text,done:false,_crId:cr.id});
+  });
+  saveDay();
+}
+
+function deleteCalRecurring(id){
+  if(!confirm('確定刪除此週期項目？'))return;
+  state.calRecurring=state.calRecurring.filter(x=>x.id!==id);
+  // remove injected items from all calendar days
+  if(state.calendar){
+    Object.values(state.calendar).forEach(day=>{
+      if(day.items)day.items=day.items.filter(x=>x._crId!==id);
+    });
+  }
+  saveDay();
+  renderCalRecurringManager(document.getElementById('cal-rec-manager'));
+}
+
+function updateCalRecurringPeriod(id,period){
+  const cr=getCalRecurring().find(x=>x.id===id);
+  if(!cr)return;
+  cr.period=period;
+  cr.periodValue=period==='weekly'?[1]:period==='monthly'?'1':null;
+  saveDay();
+  renderCalRecurringManager(document.getElementById('cal-rec-manager'));
+}
+function updateCalRecurringDow(id,dow,checked){
+  const cr=getCalRecurring().find(x=>x.id===id);
+  if(!cr)return;
+  if(!Array.isArray(cr.periodValue))cr.periodValue=[];
+  if(checked){if(!cr.periodValue.includes(dow))cr.periodValue.push(dow);}
+  else cr.periodValue=cr.periodValue.filter(d=>d!==dow);
+  saveDay();
+}
+function updateCalRecurringMonthday(id,val){
+  const cr=getCalRecurring().find(x=>x.id===id);
+  if(cr){cr.periodValue=val;saveDay();}
+}
+
+function renderCalRecurringManager(container){
+  if(!container)return;
+  const list=getCalRecurring();
+  const DOW_NAMES=['日','一','二','三','四','五','六'];
+  const monthOpts=`<option value="1">月初(1日)</option><option value="last">月底</option>${Array.from({length:28},(_,i)=>`<option value="${i+2}">${i+2}日</option>`).join('')}`;
+
+  container.innerHTML=list.length?list.map(cr=>`
+    <div style="background:var(--surf2);border:1px solid var(--bd);border-radius:8px;padding:10px;margin-bottom:8px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="flex:1;font-size:13px;font-weight:500">${esc(cr.text)}</span>
+        <span style="font-size:10px;color:var(--amb);background:rgba(201,168,76,.15);padding:2px 7px;border-radius:4px">${calRecurringPeriodLabel(cr)}</span>
+        <button class="tbl-del" onclick="deleteCalRecurring('${cr.id}')">×</button>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+        <select style="margin:0;font-size:11px;padding:4px 8px;width:auto" onchange="updateCalRecurringPeriod('${cr.id}',this.value)">
+          <option value="daily" ${cr.period==='daily'?'selected':''}>每日</option>
+          <option value="weekly" ${cr.period==='weekly'?'selected':''}>每週</option>
+          <option value="monthly" ${cr.period==='monthly'?'selected':''}>每月</option>
+        </select>
+        ${cr.period==='weekly'?`<div style="display:flex;gap:4px;flex-wrap:wrap">${DOW_NAMES.map((n,i)=>`
+          <label style="display:flex;align-items:center;gap:2px;font-size:11px;cursor:pointer">
+            <input type="checkbox" style="width:auto;margin:0" ${Array.isArray(cr.periodValue)&&cr.periodValue.includes(i)?'checked':''}
+              onchange="updateCalRecurringDow('${cr.id}',${i},this.checked)"> ${n}
+          </label>`).join('')}</div>`:''}
+        ${cr.period==='monthly'?`<select style="margin:0;font-size:11px;padding:4px 8px;width:auto" onchange="updateCalRecurringMonthday('${cr.id}',this.value)">
+          ${monthOpts.replace(`value="${cr.periodValue||'1'}"`,`value="${cr.periodValue||'1'}" selected`)}</select>`:''}
+      </div>
+    </div>`).join('')
+  :`<div style="font-size:12px;color:var(--tx2);padding:8px 0">尚無週期項目 — 點下方新增</div>`;
+}
+
+function renderCalendar(area){
+  const y=calDate.getFullYear(),m=calDate.getMonth();
+  const isWeekend=[0,6].includes(new Date().getDay());
+  if(isWeekend) area.classList.add('cal-weekend-bg');
+  else area.classList.remove('cal-weekend-bg');
+  // week range label
+  let titleStr='';
+  if(calView==='month'){
+    titleStr=`${y}年 ${MONTHS[m]}`;
+  } else {
+    const wd=new Date(calDate);wd.setDate(wd.getDate()-wd.getDay());
+    const we=new Date(wd.getTime()+6*86400000);
+    titleStr=`${wd.getMonth()+1}/${wd.getDate()} – ${we.getMonth()+1}/${we.getDate()}`;
+  }
+  const grid=calView==='month'?buildMonthGrid():buildWeekGrid();
+  const panel=buildDayPanel();
+
+  area.innerHTML=`<div class="cal-wrap">
+    <div class="cal-main" style="padding:0 16px 16px 0">
+      <div class="cal-header">
+        <button class="cal-nav" onclick="calNav(-1)">‹</button>
+        <button class="cal-nav" onclick="calGoToday()">今天</button>
+        <button class="cal-nav" onclick="calNav(1)">›</button>
+        <div class="cal-month-title">${titleStr}</div>
+        <div class="cal-view-toggle">
+          <button class="cal-view-btn${calView==='month'?' active':''}" onclick="setCalView('month')">月</button>
+          <button class="cal-view-btn${calView==='week'?' active':''}" onclick="setCalView('week')">週</button>
+        </div>
+      </div>
+      ${grid}
+    </div>
+    ${panel}
+  </div>`;
+  // wire drink list and recurring items after render
+  if(calSelected) setTimeout(()=>{
+    renderDrinkList(calSelected);
+    const wrap=document.getElementById('cal-rec-wrap');
+    if(wrap&&wrap.style.display!=='none')renderCalRecurringManager(document.getElementById('cal-rec-manager'));
+  },10);
+}
+
+/* ── Task Scheduling ── */
+let _schTarget=null; // {wsId, taskId}
+
+function getAllTasks(){
+  const out=[];
+  state.workspaces.forEach(ws=>ws.tasks.forEach(t=>out.push({wsId:ws.id,wsName:ws.name,task:t})));
+  return out;
+}
+function getTaskByIds(wsId,taskId){
+  return state.workspaces.find(w=>w.id===wsId)?.tasks.find(t=>t.id===taskId);
+}
+
+function openSchModal(wsId,taskId){
+  _schTarget={wsId,taskId};
+  const t=getTaskByIds(wsId,taskId);
+  if(!t)return;
+  document.getElementById('sch-task-label').textContent=t.desc;
+  const inp=document.getElementById('sch-date-input');
+  inp.value=t.scheduledDate||dateKey(new Date());
+  // quick btns
+  const today=new Date();
+  const btns=[
+    {label:'今天',d:0},{label:'明天',d:1},{label:'後天',d:2},
+    {label:'下週一',d:null,fn:()=>{const n=new Date();n.setDate(n.getDate()+(8-n.getDay())%7||7);return dateKey(n);}}
+  ];
+  document.getElementById('sch-quick-btns').innerHTML=btns.map((b,i)=>{
+    const key=b.fn?b.fn():dateKey(new Date(today.getTime()+b.d*86400000));
+    return`<button class="cal-nav" style="font-size:12px" onclick="document.getElementById('sch-date-input').value='${key}'">${b.label}</button>`;
+  }).join('');
+  const rmBtn=document.getElementById('sch-remove-btn');
+  rmBtn.style.display=t.scheduledDate?'':'none';
+  document.getElementById('sch-modal').style.display='flex';
+}
+function scheduleTask(dateVal){
+  if(!_schTarget)return;
+  const t=getTaskByIds(_schTarget.wsId,_schTarget.taskId);
+  if(t){
+    t.scheduledDate=dateVal||null;
+    save();
+  }
+  closeSchModal();
+  // if calendar is open, refresh it
+  if(state.view==='calendar')renderCalendar(document.getElementById('content-area'));
+}
+function closeSchModal(){document.getElementById('sch-modal').style.display='none';_schTarget=null;}
+
+function unscheduleTask(wsId,taskId,e){
+  if(e)e.stopPropagation();
+  const t=getTaskByIds(wsId,taskId);
+  if(t){t.scheduledDate=null;save();}
+  if(state.view==='calendar')renderCalendar(document.getElementById('content-area'));
+}
+
+// Add task to day from panel search
+function calSearchTasks(q,dayKey){
+  const all=getAllTasks().filter(x=>x.task.status!=='trash');
+  const lq=q.toLowerCase();
+  return lq?all.filter(x=>x.task.desc.toLowerCase().includes(lq)||(x.task.bm||'').toLowerCase().includes(lq)):all.slice(0,20);
+}
+function assignTaskToDay(wsId,taskId,key){
+  const t=getTaskByIds(wsId,taskId);
+  if(t){t.scheduledDate=key;save();}
+  // close dropdown and re-render panel
+  const drop=document.getElementById('add-task-drop');
+  if(drop)drop.style.display='none';
+  const inp=document.getElementById('add-task-search-inp');
+  if(inp)inp.value='';
+  renderCalendar(document.getElementById('content-area'));
+}
+
+/* ── Morning Brief ── */
+function buildMorningBrief(){
+  const now=new Date();
+  const todayStr=dateKey(now);
+  const DOW_FULL=['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+  const isWeekend=[0,6].includes(now.getDay());
+
+  // Today's scheduled tasks
+  const allTasks=getAllTasks().filter(x=>x.task.status!=='trash');
+  const scheduledToday=allTasks.filter(x=>x.task.scheduledDate===todayStr);
+  const scheduledDone=scheduledToday.filter(x=>x.task.status==='done').length;
+
+  // WIP tasks
+  const wip=allTasks.filter(x=>x.task.status==='wip');
+
+  // Overdue period tasks
+  const overdue=allTasks.filter(x=>isPeriodOverdue(x.task));
+
+  // Today's calendar note
+  const calDay=state.calendar?.[todayStr];
+  const calNote=calDay?.note||'';
+  const calItems=calDay?.items||[];
+  const calDone=calItems.filter(x=>x.done).length;
+
+  // Greeting
+  const h=now.getHours();
+  const greeting=h<12?'早安 ☀️':h<18?'午安 🌤':' 晚安 🌙';
+
+  // Priority tasks for today (pinned or scheduled)
+  const focusTasks=[
+    ...scheduledToday.filter(x=>x.task.status!=='done'),
+    ...allTasks.filter(x=>x.task.pinned&&x.task.status==='todo'&&x.task.scheduledDate!==todayStr),
+  ].slice(0,5);
+
+  const dotColor={todo:'var(--acc)',wip:'#888',done:'var(--grn)',trash:'var(--tx2)'};
+
+  return`<div class="brief-wrap">
+    <div class="brief-date">
+      <span class="brief-day">${now.getMonth()+1}月${now.getDate()}日</span>
+      <span class="brief-dow">${DOW_FULL[now.getDay()]}${isWeekend?' · 假日':''}</span>
+    </div>
+    <div class="brief-greeting">${greeting}，今天也加油！</div>
+
+    <div class="brief-card">
+      <div class="brief-card-label">今日排程</div>
+      <div class="brief-card-val">${scheduledToday.length}</div>
+      <div class="brief-card-sub">已完成 ${scheduledDone} / ${scheduledToday.length}
+        ${scheduledToday.length?`<a onclick="switchView('calendar')">查看行事曆 →</a>`:'<a onclick="switchView(\'calendar\')">前往安排 →</a>'}
+      </div>
+    </div>
+
+    <div class="brief-card">
+      <div class="brief-card-label">進行中</div>
+      <div class="brief-card-val" style="color:${wip.length?'#888':'var(--tx)'}">${wip.length}</div>
+      <div class="brief-card-sub">${wip.length?wip.slice(0,2).map(x=>esc(x.task.desc.slice(0,18))).join('、')+(wip.length>2?`…`:''):'無進行中任務'}</div>
+    </div>
+
+    <div class="brief-card">
+      <div class="brief-card-label">週期未完成</div>
+      <div class="brief-card-val" style="color:${overdue.length?'var(--red)':'var(--tx)'}">${overdue.length}</div>
+      <div class="brief-card-sub">${overdue.length?`<span style="color:var(--red)">需要處理</span>`:'本週期全部完成 ✓'}</div>
+    </div>
+
+    ${calNote||calItems.length?`
+    <div class="brief-cal-note" onclick="switchView('calendar')">
+      <span style="font-size:10px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">今日備註</span>
+      ${calNote?`<span>${esc(calNote.slice(0,100))}${calNote.length>100?'…':''}</span>`:''}
+      ${calItems.length?`<span style="color:var(--tx2);margin-left:${calNote?'8px':'0'}">Checklist ${calDone}/${calItems.length}</span>`:''}
+    </div>`:`
+    <div class="brief-cal-note" onclick="switchView('calendar')">
+      <span style="font-size:10px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">今日備註</span>
+      <span class="brief-cal-empty">今天還沒有備註 — 點擊前往行事曆新增</span>
+    </div>`}
+
+    ${focusTasks.length?`
+    <div class="brief-tasks">
+      <div style="font-size:10px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">今日待辦重點</div>
+      ${focusTasks.map(x=>`
+        <div class="brief-task-item">
+          <div class="brief-task-dot" style="background:${dotColor[x.task.status]||'var(--bd)'}"></div>
+          <span class="brief-task-desc">${esc(x.task.desc)}</span>
+          <span class="brief-task-ws">${esc(x.wsName)}</span>
+        </div>`).join('')}
+    </div>`:''}
+  </div>`;
+}
+
+/* ── Render ── */
+function render(){
+  // Sidebar
+  const sidebar=document.getElementById('sidebar-content');sidebar.innerHTML='';
+  ['dashboard','calendar','vendor','noconvert','mapping','teams','weekly'].forEach(v=>{
+    document.getElementById('nav-'+v)?.classList.toggle('active',state.view===v);
+  });
+  state.folders.forEach(f=>{
+    const g=document.createElement('div');
+    const h=document.createElement('div');h.className='folder-header';h.textContent=f.name;h.onclick=()=>renameFolder(f.id);g.appendChild(h);
+    f.wsIds.forEach(wsId=>{
+      const ws=state.workspaces.find(w=>w.id===wsId);if(!ws)return;
+      const item=document.createElement('div');
+      item.className='nav-item ws-item'+(state.view===wsId?' active':'');
+      item.textContent='# '+ws.name;
+      item.onclick=()=>{state.view=wsId;save();};
+      item.ondblclick=()=>renameWorkspace(wsId);
+      g.appendChild(item);
+    });
+    sidebar.appendChild(g);
+  });
+
+  const area=document.getElementById('content-area');
+  const vt=document.getElementById('view-title');
+  const q=(document.getElementById('global-search')?.value||'').toLowerCase();
+
+  if(state.view==='vendor'){vt.textContent='Vendor Relations';renderVendorView(area);return;}
+  if(state.view==='mapping'){vt.textContent='BM / Vendor Map';renderMappingView(area);return;}
+  if(state.view==='calendar'){vt.textContent='行事曆';renderCalendar(area);return;}
+  if(state.view==='noconvert'){vt.textContent='No-Convert List';renderNoConvertView(area);return;}
+  if(state.view==='teams'){vt.textContent='Teams 解析';renderTeamsView(area);return;}
+  if(state.view==='weekly'){vt.textContent='每週回顧';renderWeeklyView(area);return;}
+
+  let items=[];let currentWsId=null;
+  if(state.view==='dashboard'){
+    vt.textContent='Dashboard';
+    state.workspaces.forEach(ws=>ws.tasks.forEach(t=>items.push({wsId:ws.id,wsName:ws.name,task:t})));
+  } else {
+    const ws=state.workspaces.find(w=>w.id===state.view);
+    if(!ws){state.view='dashboard';return render();}
+    vt.textContent=ws.name;currentWsId=ws.id;
+    ws.tasks.forEach(t=>items.push({wsId:ws.id,wsName:ws.name,task:t}));
+  }
+  if(q)items=items.filter(x=>
+    (x.task.desc||'').toLowerCase().includes(q)||
+    (x.task.bm||'').toLowerCase().includes(q)||
+    (x.task.vendor||'').toLowerCase().includes(q));
+
+  const byStatus=s=>items.filter(x=>x.task.status===s);
+  const sorted=arr=>[...arr.filter(x=>x.task.pinned),...arr.filter(x=>!x.task.pinned)];
+  const counts={todo:byStatus('todo').length,wip:byStatus('wip').length,done:byStatus('done').length,trash:byStatus('trash').length};
+  const pinnedCount=items.filter(x=>x.task.pinned&&x.task.status==='todo').length;
+  const overdueCount=items.filter(x=>isPeriodOverdue(x.task)).length;
+  const isDash=state.view==='dashboard';
+
+  area.innerHTML=`
+    ${isDash ? buildMorningBrief() : ''}
+    ${isDash?`<div style="margin-bottom:12px;display:flex;gap:7px;flex-wrap:wrap">${state.workspaces.map(ws=>`<button class="card-btn amb" onclick="openNewTaskModal('${ws.id}')">+ ${esc(ws.name)}</button>`).join('')}</div>`:''}
+    <div class="stats-bar">
+      <div class="stat-chip"><div class="s-val">${items.filter(x=>x.task.status!=='trash').length}</div><div class="s-lbl">總任務</div></div>
+      <div class="stat-chip s-pin"><div class="s-val">${pinnedCount}</div><div class="s-lbl">⭐ 優先</div></div>
+      <div class="stat-chip s-todo"><div class="s-val">${counts.todo}</div><div class="s-lbl">Todo</div></div>
+      <div class="stat-chip s-wip"><div class="s-val">${counts.wip}</div><div class="s-lbl">進行中</div></div>
+      <div class="stat-chip s-done"><div class="s-val">${counts.done}</div><div class="s-lbl">Done</div></div>
+      ${overdueCount?`<div class="stat-chip" style="border-color:rgba(192,90,82,.35)"><div class="s-val" style="color:var(--red)">${overdueCount}</div><div class="s-lbl">🔄 未完成</div></div>`:''}
+      <div class="stat-chip s-rec"><div class="s-val">${state.recurring.filter(r=>r.active).length}</div><div class="s-lbl">週期(舊)</div></div>
+    </div>
+    ${state.recurring.length?`<div class="section-label">🔄 週期任務</div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">${state.recurring.map(buildRecCardHtml).join('')}</div>`:''}
+    ${pinnedCount?`<div class="section-label">⭐ 優先處理</div><div class="kanban kanban-3" style="margin-bottom:16px" id="pinned-zone"></div>`:''}
+    <div class="section-label">所有任務</div>
+    <div class="kanban" id="main-kanban">
+      <div class="column" id="col-todo"><div class="col-header">Todo <span class="col-count">${counts.todo}</span></div>${currentWsId?buildFormHtml(currentWsId):''}</div>
+      <div class="column col-wip" id="col-wip"><div class="col-header">🔵 進行中 <span class="col-count">${counts.wip}</span></div></div>
+      <div class="column col-done" id="col-done"><div class="col-header">Done <span class="col-count">${counts.done}</span></div></div>
+      <div class="column" id="col-trash"><div class="col-header" style="opacity:.5">Trash <span class="col-count">${counts.trash}</span></div></div>
+    </div>`;
+
+  if(pinnedCount){
+    const pz=document.getElementById('pinned-zone');
+    const pt=byStatus('todo').filter(x=>x.task.pinned);
+    const pw=byStatus('wip').filter(x=>x.task.pinned);
+    const pd=byStatus('done').filter(x=>x.task.pinned);
+    pz.innerHTML=`
+      <div class="column"><div class="col-header">⭐ Todo <span class="col-count">${pt.length}</span></div>${pt.map(x=>buildCardHtml(x,isDash)).join('')||'<div class="empty-col">—</div>'}</div>
+      <div class="column col-wip"><div class="col-header">⭐ 進行中 <span class="col-count">${pw.length}</span></div>${pw.map(x=>buildCardHtml(x,isDash)).join('')||'<div class="empty-col">—</div>'}</div>
+      <div class="column col-done"><div class="col-header">⭐ Done <span class="col-count">${pd.length}</span></div>${pd.map(x=>buildCardHtml(x,isDash)).join('')||'<div class="empty-col">—</div>'}</div>`;
+  }
+
+  ['todo','wip','done','trash'].forEach(status=>{
+    const col=document.getElementById('col-'+status);
+    sorted(byStatus(status)).forEach(x=>col.innerHTML+=buildCardHtml(x,isDash));
+    if(!byStatus(status).length&&status!=='todo')col.innerHTML+='<div class="empty-col">—</div>';
+  });
+
+  if(currentWsId) setTimeout(()=>wireFormAC(), 10);
+}
+
+// Helpers for missing CSS classes referenced in mapping view
+const style=document.createElement('style');
+style.textContent='.tbl-edit{background:transparent;border:none;color:var(--acc);cursor:pointer;font-size:11px;font-family:"Geist",sans-serif;padding:0;}.tbl-del{background:transparent;border:none;color:var(--red);cursor:pointer;font-size:11px;font-family:"Geist",sans-serif;padding:0;}';
+document.head.appendChild(style);
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeEditModal();closeMapModal();closeSlistModal();closeVrModal();closeVrPreview();closeSchModal();}});
+function handleTitleClick(){if(!['dashboard','vendor','mapping','calendar','noconvert','teams','weekly'].includes(state.view))renameWorkspace(state.view);}
+window._inlineItems=[];
+
+// Boot: pull from Supabase, fallback to localStorage
+(async()=>{
+  setSyncStatus('saving');
+  const pulled=await pullFromSupabase();
+  if(pulled) setSyncStatus('ok');
+  else setSyncStatus(navigator.onLine?'err':'offline');
+  setTimeout(()=>setSyncStatus('idle'),3000);
+  runStartupChecks();
+  render();
+})();
+
+window.addEventListener('online', ()=>{setSyncStatus('idle');schedulePush();});
+window.addEventListener('offline',()=>setSyncStatus('offline'));
+</script>
+</body>
+</html>
